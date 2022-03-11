@@ -106,7 +106,15 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarConditionProjectExec(plan.condition, null, child)
-    case plan: HashAggregateExec =>
+    case plan: HashAggregateExec => //TODO EMAN
+      val aggregateFunc = plan.aggregateExpressions.aggregateFunction match {
+        case Sum(_) =>
+          System.out.println(s"BUGBUG in replaceWithColumnarPlan for SUM")
+        case _ =>
+          System.out.println(s"BUGBUG in replaceWithColumnarPlan for something other than SUM")
+      }
+
+      System.out.println(s"BUGBUG I am still getting here")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarHashAggregateExec(
