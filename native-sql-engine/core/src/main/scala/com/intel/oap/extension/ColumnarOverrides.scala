@@ -134,41 +134,29 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarConditionProjectExec(plan.condition, null, child)
     case plan: HashAggregateExec => //TODO EMAN
-      logWarning(s"BUGBUG entering here")
-      if (columnarConf.turnOFFSumSupport) 
-      {
-        logWarning(s" BUGBUG TurnOffSumSupport is True")
-      }
-      else
-      {
-        logWarning(s" BUGBUG TurnOffSumSupport is False")
-      }
       val aggregateExpressions = plan.aggregateExpressions 
       var isSum = false
       for (exp <- aggregateExpressions) {
             val aggregateFunc = exp.aggregateFunction
-            logWarning(s"BUGBUG aggregateFunc ${aggregateFunc}")
             
             aggregateFunc match {
               case Sum(_) =>
                 isSum = true
-                logWarning(s"BUGBUG in replaceWithColumnarPlan for SUM")
+                logDebug(s"DEBUGMSG in replaceWithColumnarPlan for SUM")
               case _ =>
-                logWarning(s"BUGBUG in replaceWithColumnarPlan for something other than SUM")
+                logDebug(s"DEBUGMSG in replaceWithColumnarPlan for something other than SUM")
             }
       }
-      logWarning(s"BUGBUG I am still getting here")
       if (columnarConf.turnOFFSumSupport && isSum)
       {
-        logWarning(s"BUGBUG YAY SKIPPING FOR SUM!!")
         val children = plan.children.map(replaceWithColumnarPlan)
-        logDebug(s"Columnar Processing for ${plan.getClass} is currently not supported.")
+        logWarning(s"DEBUGMSG Columnar Processing for ${plan.getClass} is currently disabled for SUM.")
         plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
       }
       else
       {
         val child = replaceWithColumnarPlan(plan.child)
-        logWarning(s"BUGBUG Columnar Processing for ${plan.getClass} is currently supported.")
+        logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
         ColumnarHashAggregateExec(
           plan.requiredChildDistributionExpressions,
           plan.groupingExpressions,
