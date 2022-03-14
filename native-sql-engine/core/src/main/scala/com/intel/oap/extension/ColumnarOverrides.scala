@@ -135,7 +135,9 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       if (columnarConf.turnOFFSumSupport && isSum)
       {
         logWarning(s"BUGBUG YAY SKIPPING FOR SUM!!")
-        plan
+        val children = plan.children.map(replaceWithColumnarPlan)
+        logDebug(s"Columnar Processing for ${plan.getClass} is currently not supported.")
+        plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
       }
       else
       {
