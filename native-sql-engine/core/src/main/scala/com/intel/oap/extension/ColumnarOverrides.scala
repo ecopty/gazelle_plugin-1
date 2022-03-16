@@ -262,17 +262,33 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
     case plan: CustomShuffleReaderExec if columnarConf.enableColumnarShuffle =>
       plan.child match {
         case shuffle: ColumnarShuffleExchangeAdaptor =>
-          logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+        /*EMAN
+        stage.shuffle
+              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
+              .columnarShuffleDependency*/
+          val dep = shuffle
+              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
+              .columnarShuffleDependency
+          logWarning(s"ColumnarShuffleExchangeAdaptor: Columnar Processing for ${plan.getClass} is currently supported.")
+          logWarning(s"shuffle size ${dep.dataSize}")
           CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(plan.child, plan.partitionSpecs))
         case ShuffleQueryStageExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
-          logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+          val dep = shuffle
+              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
+              .columnarShuffleDependency
+          logWarning(s"ShuffleQueryStageExec : Columnar Processing for ${plan.getClass} is currently supported.")
+          logWarning(s"shuffle size ${dep.dataSize}")
           CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(plan.child, plan.partitionSpecs))
         case ShuffleQueryStageExec(_, reused: ReusedExchangeExec) =>
           reused match {
             case ReusedExchangeExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
-              logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+              val dep = shuffle
+              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
+              .columnarShuffleDependency
+              logWarning(s"ShuffleQueryStageExec Columnar Processing for ${plan.getClass} is currently supported.")
+              logWarning(s"shuffle size ${dep.dataSize}")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(
                   plan.child,
