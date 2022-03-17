@@ -259,36 +259,32 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       plan
 
-    case plan: CustomShuffleReaderExec if columnarConf.enableColumnarShuffle =>
+    case plan:   if columnarConf.enableColumnarShuffle =>
       plan.child match {
         case shuffle: ColumnarShuffleExchangeAdaptor =>
         /*EMAN
         stage.shuffle
               .asInstanceOf[ColumnarShuffleExchangeAdaptor]
               .columnarShuffleDependency*/
-          val dep = shuffle
-              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
-              .columnarShuffleDependency
+              //TODO metrics("dataSize")
+          val metrics = shuffle.metrics
+              
           logWarning(s"ColumnarShuffleExchangeAdaptor: Columnar Processing for ${plan.getClass} is currently supported.")
-          logWarning(s"shuffle size ${dep.dataSize}")
+          logWarning(s"shuffle size ${metrics("dataSize")}")
           CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(plan.child, plan.partitionSpecs))
         case ShuffleQueryStageExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
-          val dep = shuffle
-              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
-              .columnarShuffleDependency
+          val metrics = shuffle.metrics
           logWarning(s"ShuffleQueryStageExec : Columnar Processing for ${plan.getClass} is currently supported.")
-          logWarning(s"shuffle size ${dep.dataSize}")
+          logWarning(s"shuffle size ${metrics("dataSize")}")
           CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(plan.child, plan.partitionSpecs))
         case ShuffleQueryStageExec(_, reused: ReusedExchangeExec) =>
           reused match {
             case ReusedExchangeExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
-              val dep = shuffle
-              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
-              .columnarShuffleDependency
+              val metrics = shuffle.metrics
               logWarning(s"ShuffleQueryStageExec Columnar Processing for ${plan.getClass} is currently supported.")
-              logWarning(s"shuffle size ${dep.dataSize}")
+              logWarning(s"shuffle size ${metrics("dataSize")}")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(
                   plan.child,

@@ -58,6 +58,12 @@ import org.apache.spark.util.ThreadUtils
  * again and create more stages if possible. After all stages have been materialized, we execute
  * the rest of the plan.
  */
+
+ /**
+ TODO EMAN
+basicly we need to get the shuffle size of each stage, then use AQE to decide fallback or not.
+If a stage has little size to shuffle, we can modify the query plan to fallback the whole stage
+ */
 case class AdaptiveSparkPlanExec(
     inputPlan: SparkPlan,
     @transient context: AdaptiveExecutionContext,

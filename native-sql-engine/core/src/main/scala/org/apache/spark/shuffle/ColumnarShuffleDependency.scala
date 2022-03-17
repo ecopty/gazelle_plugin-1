@@ -40,7 +40,7 @@ import scala.reflect.ClassTag
  * @param mapSideCombine whether to perform partial aggregation (also known as map-side combine)
  * @param shuffleWriterProcessor the processor to control the write behavior in ShuffleMapTask
  * @param nativePartitioning     hold partitioning parameters needed by native splitter
- * @param dataSize for shuffle data size tracking
+ * @param dataSize for shuffle data size tracking //TODO EMAN TRACK THIS AND USE IT
  * @param bytesSpilled for shuffle spill size tracking
  * @param computePidTime partition id computation time metric
  * @param splitTime native split time metric
