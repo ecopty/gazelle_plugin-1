@@ -293,18 +293,24 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
         SparkShimLoader.getSparkShims.getPartitionSpecsOfCustomShuffleReaderExec(plan)
       child match {
         case shuffle: ColumnarShuffleExchangeAdaptor =>
-          logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+          var metrics = shuffle.metrics
+          logWarning(s"ColumnarShuffleExchangeAdaptor: Columnar Processing for ${plan.getClass} is currently supported.")
+          logWarning(s"shuffle size ${metrics("dataSize")}")
           CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(child, partitionSpecs))
         // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
         case shuffleQueryStageExec: ShuffleQueryStageExec =>
           shuffleQueryStageExec.plan match {
             case s: ColumnarShuffleExchangeAdaptor =>
-              logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+              var metrics = shuffle.metrics
+              logWarning(s"ColumnarShuffleExchangeAdaptor: Columnar Processing for ${plan.getClass} is currently supported.")
+              logWarning(s"shuffle size ${metrics("dataSize")}")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(child, partitionSpecs))
             case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
-              logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+              val metrics = s.metrics
+              logWarning(s"ReusedExchangeExec: Columnar Processing for ${plan.getClass} is currently supported.")
+              logWarning(s"shuffle size ${metrics("dataSize")}")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(
                   child,
