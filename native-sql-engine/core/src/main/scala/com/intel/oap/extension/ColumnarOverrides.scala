@@ -30,6 +30,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SparkSession, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.optimizer.BuildLeft
 import org.apache.spark.sql.catalyst.optimizer.BuildRight
 import org.apache.spark.sql.catalyst.plans.Cross
@@ -133,24 +134,48 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarConditionProjectExec(plan.condition, null, child)
     case plan: HashAggregateExec => //TODO EMAN
-      val aggregateFunc = plan.aggregateExpressions.aggregateFunction match {
-        case Sum(_) =>
-          System.out.println(s"BUGBUG in replaceWithColumnarPlan for SUM")
-        case _ =>
-          System.out.println(s"BUGBUG in replaceWithColumnarPlan for something other than SUM")
+      logWarning(s"BUGBUG entering here")
+      if (columnarConf.turnOFFSumSupport) 
+      {
+        logWarning(s" BUGBUG TurnOffSumSupport is True")
       }
-
-      System.out.println(s"BUGBUG I am still getting here")
-      val child = replaceWithColumnarPlan(plan.child)
-      logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
-      ColumnarHashAggregateExec(
-        plan.requiredChildDistributionExpressions,
-        plan.groupingExpressions,
-        plan.aggregateExpressions,
-        plan.aggregateAttributes,
-        plan.initialInputBufferOffset,
-        plan.resultExpressions,
-        child)
+      else
+      {
+        logWarning(s" BUGBUG TurnOffSumSupport is False")
+      }
+      val aggregateExpressions = plan.aggregateExpressions 
+      var isSum = false
+      for (exp <- aggregateExpressions) {
+            val aggregateFunc = exp.aggregateFunction
+            logWarning(s"BUGBUG aggregateFunc ${aggregateFunc}")
+            
+            aggregateFunc match {
+              case Sum(_) =>
+                isSum = true
+                logWarning(s"BUGBUG in replaceWithColumnarPlan for SUM")
+              case _ =>
+                logWarning(s"BUGBUG in replaceWithColumnarPlan for something other than SUM")
+            }
+      }
+      logWarning(s"BUGBUG I am still getting here")
+      if (columnarConf.turnOFFSumSupport && isSum)
+      {
+        logWarning(s"BUGBUG YAY SKIPPING FOR SUM!!")
+        plan
+      }
+      else
+      {
+        val child = replaceWithColumnarPlan(plan.child)
+        logWarning(s"BUGBUG Columnar Processing for ${plan.getClass} is currently supported.")
+        ColumnarHashAggregateExec(
+          plan.requiredChildDistributionExpressions,
+          plan.groupingExpressions,
+          plan.aggregateExpressions,
+          plan.aggregateAttributes,
+          plan.initialInputBufferOffset,
+          plan.resultExpressions,
+          child)
+      }
     case plan: UnionExec =>
       val children = plan.children.map(replaceWithColumnarPlan)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")

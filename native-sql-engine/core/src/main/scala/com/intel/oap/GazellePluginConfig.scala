@@ -47,6 +47,10 @@ class GazellePluginConfig(conf: SQLConf) extends Logging {
   // for all operators
   val enableCpu = getCpu()
 
+  // EMAN 
+  val turnOFFSumSupport : Boolean =
+    conf.getConfString("spark.oap.sql.columnar.turnOffSumSupport", "true").trim.toBoolean
+
   // enable or disable columnar batchscan
   val enableColumnarBatchScan: Boolean =
     conf.getConfString("spark.oap.sql.columnar.batchscan", "true").toBoolean && enableCpu
