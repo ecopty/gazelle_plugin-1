@@ -259,14 +259,9 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       plan
 
-    case plan:   if columnarConf.enableColumnarShuffle =>
+    case plan: CustomShuffleReaderExec if columnarConf.enableColumnarShuffle =>
       plan.child match {
         case shuffle: ColumnarShuffleExchangeAdaptor =>
-        /*EMAN
-        stage.shuffle
-              .asInstanceOf[ColumnarShuffleExchangeAdaptor]
-              .columnarShuffleDependency*/
-              //TODO metrics("dataSize")
           val metrics = shuffle.metrics
               
           logWarning(s"ColumnarShuffleExchangeAdaptor: Columnar Processing for ${plan.getClass} is currently supported.")
