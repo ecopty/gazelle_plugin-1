@@ -51,6 +51,11 @@ class GazellePluginConfig(conf: SQLConf) extends Logging {
   val turnOFFSumSupport : Boolean =
     conf.getConfString("spark.oap.sql.columnar.turnOffSumSupport", "true").trim.toBoolean
 
+  val turnOFFSmallShuffleSize : Boolean =
+    conf.getConfString("spark.oap.sql.columnar.turnOffSmallShuffleSize", "true").trim.toBoolean
+  val ShuffleSizeThreshHold : Long =
+    conf.getConfString("spark.oap.sql.columnar.ShuffleSizeThreshHold", "50000000").toLong
+
   // enable or disable columnar batchscan
   val enableColumnarBatchScan: Boolean =
     conf.getConfString("spark.oap.sql.columnar.batchscan", "true").toBoolean && enableCpu
