@@ -41,7 +41,7 @@ import org.apache.spark.sql.execution.exchange._
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLAdaptiveExecutionUpdate, SparkListenerSQLAdaptiveSQLMetricUpdates, SQLPlanMetric}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.util.ThreadUtils
-
+import com.intel.oap.GazellePluginConfig
 /**
  * A root node to execute the query plan adaptively. It splits the query plan into independent
  * stages and executes them in order according to their dependencies. The query stage
@@ -72,7 +72,7 @@ case class AdaptiveSparkPlanExec(
   extends LeafExecNode {
 
   @transient private val lock = new Object()
-
+  @transient private val columnarConf: GazellePluginConfig = GazellePluginConfig.getSessionConf
   @transient private val logOnLevel: ( => String) => Unit = conf.adaptiveExecutionLogLevel match {
     case "TRACE" => logTrace(_)
     case "DEBUG" => logDebug(_)
@@ -179,6 +179,14 @@ case class AdaptiveSparkPlanExec(
   private def getFinalPhysicalPlan(): SparkPlan = lock.synchronized {
     if (isFinalPlan) return currentPhysicalPlan
 
+    if (!metrics.contains("dataSize"))
+      logWarning(s"this plan ${currentPhysicalPlan.getClass} doesn't have dataSize in metrics")
+    if (columnarConf.turnOFFSmallShuffleSize && metrics.contains("dataSize") &&
+          metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
+    {
+      logWarning(s"this plan ${currentPhysicalPlan.getClass}  dataSize ${metrics("dataSize").value} smaller than ${columnarConf.ShuffleSizeThreshHold}")
+      return currentPhysicalPlan
+    }
     // In case of this adaptive plan being executed out of `withActive` scoped functions, e.g.,
     // `plan.queryExecution.rdd`, we need to set active session here as new plan nodes can be
     // created in the middle of the execution.
@@ -246,7 +254,7 @@ case class AdaptiveSparkPlanExec(
         val origCost = costEvaluator.evaluateCost(currentPhysicalPlan)
         val newCost = costEvaluator.evaluateCost(newPhysicalPlan)
         logWarning(s"newCost $newCost originalCost $origCost")
-        logWarning(s" new plan $newPhysicalPlan \n ------------------------ \n currplan $currentPhysicalPlan")
+        //logWarning(s" new plan $newPhysicalPlan \n ------------------------ \n currplan $currentPhysicalPlan")
         if (newCost < origCost ||
             (newCost == origCost && currentPhysicalPlan != newPhysicalPlan)) {
           logOnLevel(s"Plan changed from $currentPhysicalPlan to $newPhysicalPlan")

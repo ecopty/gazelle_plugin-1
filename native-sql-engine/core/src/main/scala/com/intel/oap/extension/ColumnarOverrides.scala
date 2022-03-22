@@ -266,53 +266,53 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
               
           
           logWarning(s"shuffle size ${metrics("dataSize")} threshold ${columnarConf.ShuffleSizeThreshHold}")
-          if (columnarConf.turnOFFSmallShuffleSize && metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
-          {
-              val children = plan.children.map(replaceWithColumnarPlan)
-              logWarning(s"ColumnarShuffleExchangeAdaptor: DEBUGMSG Columnar Processing for ${plan.getClass} is currently disabled for smallSize.")
-              plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
-          }
-          else
-          {
+          // if (columnarConf.turnOFFSmallShuffleSize && metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
+          // {
+          //     val children = plan.children.map(replaceWithColumnarPlan)
+          //     logWarning(s"ColumnarShuffleExchangeAdaptor: DEBUGMSG Columnar Processing for ${plan.getClass} is currently disabled for smallSize.")
+          //     plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
+          // }
+          // else
+          // {
             logWarning(s"ColumnarShuffleExchangeAdaptor: Columnar Processing for ${plan.getClass} is currently supported.")
             CoalesceBatchesExec(
               ColumnarCustomShuffleReaderExec(plan.child, plan.partitionSpecs))
-          }
+         // }
         case ShuffleQueryStageExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
           val metrics = shuffle.metrics
           
           logWarning(s"shuffle size ${metrics("dataSize")}  threshold ${columnarConf.ShuffleSizeThreshHold}")
-          if (columnarConf.turnOFFSmallShuffleSize && metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
-          {
-            val children = plan.children.map(replaceWithColumnarPlan)
-            logWarning(s"ShuffleQueryStageExec : DEBUGMSG Columnar Processing for ${plan.getClass} is currently disabled for smallSize.")
-            plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
-          }
-          else
-          {
+          // if (columnarConf.turnOFFSmallShuffleSize && metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
+          // {
+          //   val children = plan.children.map(replaceWithColumnarPlan)
+          //   logWarning(s"ShuffleQueryStageExec : DEBUGMSG Columnar Processing for ${plan.getClass} is currently disabled for smallSize.")
+          //   plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
+          // }
+          // else
+          // {
             logWarning(s"ShuffleQueryStageExec : Columnar Processing for ${plan.getClass} is currently supported.")
             CoalesceBatchesExec(
               ColumnarCustomShuffleReaderExec(plan.child, plan.partitionSpecs))
-          }
+          //}
         case ShuffleQueryStageExec(_, reused: ReusedExchangeExec) =>
           reused match {
             case ReusedExchangeExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
               val metrics = shuffle.metrics
               logWarning(s"shuffle size ${metrics("dataSize")}  threshold ${columnarConf.ShuffleSizeThreshHold}")
-              if (columnarConf.turnOFFSmallShuffleSize && metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
-              {
-                  val children = plan.children.map(replaceWithColumnarPlan)
-                  logWarning(s"ShuffleQueryStageExec DEBUGMSG Columnar Processing for ${plan.getClass} is currently disabled for smallSize.")
-                  plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
-              }
-              else
-              {
+              // if (columnarConf.turnOFFSmallShuffleSize && metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
+              // {
+              //     val children = plan.children.map(replaceWithColumnarPlan)
+              //     logWarning(s"ShuffleQueryStageExec DEBUGMSG Columnar Processing for ${plan.getClass} is currently disabled for smallSize.")
+              //     plan.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
+              // }
+              // else
+              // {
                 logWarning(s"ShuffleQueryStageExec Columnar Processing for ${plan.getClass} is currently supported.")
                 CoalesceBatchesExec(
                   ColumnarCustomShuffleReaderExec(
                     plan.child,
                     plan.partitionSpecs))
-              }
+              //}
             case _ =>
               plan
           }
