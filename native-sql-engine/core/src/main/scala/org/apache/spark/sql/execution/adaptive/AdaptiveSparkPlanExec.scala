@@ -180,7 +180,10 @@ case class AdaptiveSparkPlanExec(
     if (isFinalPlan) return currentPhysicalPlan
 
     if (!metrics.contains("dataSize"))
-      logWarning(s"this plan ${currentPhysicalPlan.getClass} doesn't have dataSize in metrics")
+      logWarning(s"this plan ${currentPhysicalPlan.getClass} doesn't have dataSize in metrics, other metrics: ${metrics}")
+    else
+      logWarning(s"this plan ${currentPhysicalPlan.getClass} have dataSize in metrics of ${metrics("dataSize")}")
+
     if (columnarConf.turnOFFSmallShuffleSize && metrics.contains("dataSize") &&
           metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
     {
