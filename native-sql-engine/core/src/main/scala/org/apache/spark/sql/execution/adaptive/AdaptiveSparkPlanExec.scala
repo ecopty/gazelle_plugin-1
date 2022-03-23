@@ -182,7 +182,9 @@ case class AdaptiveSparkPlanExec(
     if (!metrics.contains("dataSize"))
       logWarning(s"this plan ${currentPhysicalPlan.getClass} doesn't have dataSize in metrics, other metrics: ${metrics}")
     else
+    {
       logWarning(s"this plan ${currentPhysicalPlan.getClass} have dataSize in metrics of ${metrics("dataSize")}")
+    }
 
     if (columnarConf.turnOFFSmallShuffleSize && metrics.contains("dataSize") &&
           metrics("dataSize").value < columnarConf.ShuffleSizeThreshHold)
@@ -256,8 +258,50 @@ case class AdaptiveSparkPlanExec(
         val (newPhysicalPlan, newLogicalPlan) = reOptimize(logicalPlan)
         val origCost = costEvaluator.evaluateCost(currentPhysicalPlan)
         val newCost = costEvaluator.evaluateCost(newPhysicalPlan)
+        currentPhysicalPlan.child match {
+        case shuffle: ColumnarShuffleExchangeAdaptor =>
+          val smetrics = shuffle.metrics
+          if (smetrics.contains("dataSize")
+            logWarning(s"shuffle size ${smetrics("dataSize")} threshold ${columnarConf.ShuffleSizeThreshHold}")
+          else
+            logWarning(s"No dataSize for child ${currentPhysicalPlan.child.getClass} shuffle ${shuffle.getClass}")
+        case ShuffleQueryStageExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
+          val smetrics = shuffle.metrics
+          
+          if (smetrics.contains("dataSize")
+            logWarning(s"shuffle size ${smetrics("dataSize")} threshold ${columnarConf.ShuffleSizeThreshHold}")
+          else
+            logWarning(s"No dataSize for child ${currentPhysicalPlan.child.getClass} shuffle ${shuffle.getClass}")
+          
+        case ShuffleQueryStageExec(_, reused: ReusedExchangeExec) =>
+          reused match {
+            case ReusedExchangeExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
+              val smetrics = shuffle.metrics
+          if (smetrics.contains("dataSize")
+            logWarning(s"shuffle size ${smetrics("dataSize")} threshold ${columnarConf.ShuffleSizeThreshHold}")
+          else
+            logWarning(s"No dataSize for child ${currentPhysicalPlan.child.getClass} shuffle ${shuffle.getClass}")
+         
+            case _ =>
+              logWarning(s"child is none of the above options ${currentPhysicalPlan.child.getClass}")
+          }
+        case _ =>
+          logWarning(s"child is none of the above options2 ${currentPhysicalPlan.child.getClass}")
+          
+     }
         logWarning(s"newCost $newCost originalCost $origCost")
-        //logWarning(s" new plan $newPhysicalPlan \n ------------------------ \n currplan $currentPhysicalPlan")
+        logWarning(s" new plan $newPhysicalPlan \n ------------------------ \n currplan $currentPhysicalPlan")
+        logWarning(s" initial plan $initialPlan")
+        if (!metrics.contains("dataSize"))
+        {
+          logWarning(s"xx this plan ${currentPhysicalPlan.getClass} doesn't have dataSize in metrics, other metrics: ${metrics}")
+        }
+        else
+        {
+          logWarning(s"this plan ${currentPhysicalPlan.getClass} have dataSize in metrics of ${metrics("dataSize")}")
+        }
+
+
         if (newCost < origCost ||
             (newCost == origCost && currentPhysicalPlan != newPhysicalPlan)) {
           logOnLevel(s"Plan changed from $currentPhysicalPlan to $newPhysicalPlan")
@@ -634,7 +678,14 @@ case class AdaptiveSparkPlanExec(
       // and display SQL metrics correctly.
       val newMetrics = newSubPlans.flatMap { p =>
         p.flatMap(_.metrics.values.map(m => SQLPlanMetric(m.name.get, m.id, m.metricType)))
+        if (!p.metrics.contains("dataSize"))
+          logWarning(s"${p.getClass} new Metrics doesn't have dataSize in metrics, other metrics: ${p.metrics}")
+        else
+        {
+          logWarning(s"${p.getClass} new Metrics have dataSize in metrics of ${p.metrics("dataSize")}")
+        }
       }
+      logWarning(s"=== new metrics flat metrics: ${newMetrics}")
       context.session.sparkContext.listenerBus.post(SparkListenerSQLAdaptiveSQLMetricUpdates(
         executionId.toLong, newMetrics))
     } else {
