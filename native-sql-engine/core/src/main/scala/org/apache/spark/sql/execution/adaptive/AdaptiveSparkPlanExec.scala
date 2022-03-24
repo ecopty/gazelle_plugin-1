@@ -142,6 +142,7 @@ case class AdaptiveSparkPlanExec(
   @volatile private var currentPhysicalPlan = initialPlan
 
   private var isFinalPlan = false
+  private var shuffleSize = 0
 
   private var currentStageId = 0
 
@@ -264,14 +265,20 @@ case class AdaptiveSparkPlanExec(
         case shuffle: ColumnarShuffleExchangeAdaptor =>
           val smetrics = shuffle.metrics
           if (smetrics.contains("dataSize"))
+          {
             logWarning(s"shuffle size ${smetrics("dataSize")} threshold ${columnarConf.ShuffleSizeThreshHold}")
+            shuffleSize += smetrics("dataSize")}.value
+          }
           else
-            logWarning(s"No dataSize for child $shuffle ${shuffle.getClass}")
+            logWarning(s"No dataSize for child shuffle ${shuffle.getClass}")
         case ShuffleQueryStageExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
           val smetrics = shuffle.metrics
           
           if (smetrics.contains("dataSize"))
+          {
             logWarning(s"shuffle size ${smetrics("dataSize")} threshold ${columnarConf.ShuffleSizeThreshHold}")
+            shuffleSize += smetrics("dataSize")}.value
+          }
           else
             logWarning(s"No dataSize for child shuffle ${shuffle.getClass}")
           
@@ -280,7 +287,10 @@ case class AdaptiveSparkPlanExec(
             case ReusedExchangeExec(_, shuffle: ColumnarShuffleExchangeAdaptor) =>
               val smetrics = shuffle.metrics
           if (smetrics.contains("dataSize"))
+          {
             logWarning(s"shuffle size ${smetrics("dataSize")} threshold ${columnarConf.ShuffleSizeThreshHold}")
+            shuffleSize += smetrics("dataSize")}.value
+          }
           else
             logWarning(s"No dataSize for child shuffle ${shuffle.getClass}")
          
@@ -303,9 +313,15 @@ case class AdaptiveSparkPlanExec(
         {
           logWarning(s"this plan ${currentPhysicalPlan.getClass} have dataSize in metrics of ${metrics("dataSize")}")
         }
-
-
-        if (newCost < origCost ||
+        logWarning(s"Checking this plan shuffle Size is ${shuffleSize}")
+        if (shuffleSize < columnarConf.ShuffleSizeThreshHold)
+        {
+          logWarning(s"this plan shuffle Size is ${shuffleSize} reverting to initial plan")
+          currentPhysicalPlan = initialPlan
+          currentLogicalPlan = currentPhysicalPlan.logicalLink.get
+          stagesToReplace = Seq.empty[QueryStageExec]
+        }
+        else if (newCost < origCost ||
             (newCost == origCost && currentPhysicalPlan != newPhysicalPlan)) {
           logOnLevel(s"Plan changed from $currentPhysicalPlan to $newPhysicalPlan")
           cleanUpTempTags(newPhysicalPlan)
@@ -687,9 +703,8 @@ case class AdaptiveSparkPlanExec(
           logWarning(s"${p.getClass} new Metrics have dataSize in metrics of ${p.metrics("dataSize")}")
         }
         p.flatMap(_.metrics.values.map(m => SQLPlanMetric(m.name.get, m.id, m.metricType)))
-        
       }
-      logWarning(s"=== new metrics flat metrics: ${newMetrics}")
+      //logWarning(s"=== new metrics flat metrics: ${newMetrics}")
       context.session.sparkContext.listenerBus.post(SparkListenerSQLAdaptiveSQLMetricUpdates(
         executionId.toLong, newMetrics))
     } else {
