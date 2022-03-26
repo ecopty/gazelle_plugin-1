@@ -225,7 +225,8 @@ case class AdaptiveSparkPlanExec(
           case StageFailure(stage, ex) =>
             errors.append(ex)
         }
-        logWarning(s"=========== AFTER collecting all stages")
+        logWarning(s"=========== AFTER collecting all stages currphysical plan metrics ${currentPhysicalPlan.metrics}")
+        logWarning(s"=========== local metrics ${metrics}")
 
        // In case of errors, we cancel all running stages and throw exception.
         if (errors.nonEmpty) {
