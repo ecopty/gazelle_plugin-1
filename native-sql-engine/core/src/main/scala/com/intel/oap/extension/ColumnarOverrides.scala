@@ -63,6 +63,8 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
 
 
   def replaceWithColumnarPlan(plan: SparkPlan): SparkPlan = plan match {
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
+     
     case RowGuard(child: SparkPlan)
       if SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(child) =>
       replaceWithColumnarPlan(child)
@@ -108,7 +110,10 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
             numOutputBatches += 1
             r
           }
+          logWarning(s"Columnar Processing for ${plan.getClass} - number of row ${numOutputRows}")
+          inputColumnarRDD
         }
+        
       }
     case plan: CoalesceExec =>
       ColumnarCoalesceExec(plan.numPartitions, replaceWithColumnarPlan(plan.child))
@@ -379,6 +384,8 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
   var isSupportAdaptive: Boolean = true
 
   def replaceWithColumnarPlan(plan: SparkPlan): SparkPlan = plan match {
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
+
     // To get ColumnarBroadcastExchangeExec back from the fallback that for DPP reuse.
     case RowToColumnarExec(broadcastQueryStageExec: BroadcastQueryStageExec)
       if (broadcastQueryStageExec.plan match {

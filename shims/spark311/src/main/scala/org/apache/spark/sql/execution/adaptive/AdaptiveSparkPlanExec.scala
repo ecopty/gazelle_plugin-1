@@ -103,7 +103,8 @@ case class AdaptiveSparkPlanExec(
   )
 
   // A list of physical optimizer rules to be applied right after a new stage is created. The input
-  // plan to these rules has exchange as its root node.
+  // plan to these rules has exchange as its root node
+  //EMAN calling ApplyColumanrRulesAndInsertionTransition calle the pre/post override rules.
   @transient private val postStageCreationRules = Seq(
     ApplyColumnarRulesAndInsertTransitions(context.session.sessionState.columnarRules),
     CollapseCodegenStages()
@@ -172,14 +173,18 @@ case class AdaptiveSparkPlanExec(
 
   private def getFinalPhysicalPlan(): SparkPlan = lock.synchronized {
     if (isFinalPlan) return currentPhysicalPlan
-
+    logWarning(s"=========== starting getFinalPhysicalPlan===============")
+      
     // In case of this adaptive plan being executed out of `withActive` scoped functions, e.g.,
     // `plan.queryExecution.rdd`, we need to set active session here as new plan nodes can be
     // created in the middle of the execution.
     context.session.withActive {
       val executionId = getExecutionId
       var currentLogicalPlan = currentPhysicalPlan.logicalLink.get
+      logWarning(s"=========== going to call createQueryStages")
       var result = createQueryStages(currentPhysicalPlan)
+      logWarning(s"=========== AFTER going to call createQueryStages")
+
       val events = new LinkedBlockingQueue[StageMaterializationEvent]()
       val errors = new mutable.ArrayBuffer[Throwable]()
       var stagesToReplace = Seq.empty[QueryStageExec]
@@ -214,12 +219,15 @@ case class AdaptiveSparkPlanExec(
         events.drainTo(rem)
         (Seq(nextMsg) ++ rem.asScala).foreach {
           case StageSuccess(stage, res) =>
+            logWarning(s"==StageSuccess ${stage.getClass} -- ${stage.metrics} ")
+            stage.metrics.valuesIterator.foreach{ value =>  logWarning(s"metrics value ${value}") }
             stage.resultOption.set(Some(res))
           case StageFailure(stage, ex) =>
             errors.append(ex)
         }
+        logWarning(s"=========== AFTER collecting all stages")
 
-        // In case of errors, we cancel all running stages and throw exception.
+       // In case of errors, we cancel all running stages and throw exception.
         if (errors.nonEmpty) {
           cleanUpAndThrowException(errors.toSeq, None)
         }
@@ -235,6 +243,7 @@ case class AdaptiveSparkPlanExec(
         // the current physical plan. Once a new plan is adopted and both logical and physical
         // plans are updated, we can clear the query stage list because at this point the two plans
         // are semantically and physically in sync again.
+
         val logicalPlan = replaceWithQueryStagesInLogicalPlan(currentLogicalPlan, stagesToReplace)
         val (newPhysicalPlan, newLogicalPlan) = reOptimize(logicalPlan)
         val origCost = costEvaluator.evaluateCost(currentPhysicalPlan)
