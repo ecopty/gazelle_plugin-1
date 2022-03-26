@@ -63,12 +63,12 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
 
 
   def replaceWithColumnarPlan(plan: SparkPlan): SparkPlan = plan match {
-    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
      
     case RowGuard(child: SparkPlan)
       if SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(child) =>
       replaceWithColumnarPlan(child)
     case plan: RowGuard =>
+      logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val actualPlan = plan.child match {
         case p: BroadcastHashJoinExec =>
           p.withNewChildren(p.children.map {
@@ -87,9 +87,11 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       logDebug(s"Columnar Processing for ${actualPlan.getClass} is under RowGuard.")
       actualPlan.withNewChildren(actualPlan.children.map(replaceWithColumnarPlan))
     case plan: ArrowEvalPythonExec =>
+      logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val columnarChild = replaceWithColumnarPlan(plan.child)
       ColumnarArrowEvalPythonExec(plan.udfs, plan.resultAttrs, columnarChild, plan.evalType)
     case plan: BatchScanExec =>
+      logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       val runtimeFilters = SparkShimLoader.getSparkShims.getRuntimeFilters(plan)
       new ColumnarBatchScanExec(plan.output, plan.scan, runtimeFilters) {
@@ -116,11 +118,14 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
         
       }
     case plan: CoalesceExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       ColumnarCoalesceExec(plan.numPartitions, replaceWithColumnarPlan(plan.child))
     case plan: InMemoryTableScanExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       new ColumnarInMemoryTableScanExec(plan.attributes, plan.predicates, plan.relation)
     case plan: ProjectExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val columnarChild = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       columnarChild match {
@@ -134,10 +139,12 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
           ColumnarConditionProjectExec(null, plan.projectList, columnarChild)
       }
     case plan: FilterExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarConditionProjectExec(plan.condition, null, child)
     case plan: HashAggregateExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarHashAggregateExec(
@@ -149,22 +156,27 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
         plan.resultExpressions,
         child)
     case plan: UnionExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val children = plan.children.map(replaceWithColumnarPlan)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarUnionExec(children)
     case plan: LocalLimitExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarLocalLimitExec(plan.limit, child)
     case plan: GlobalLimitExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarGlobalLimitExec(plan.limit, child)
     case plan: ExpandExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       ColumnarExpandExec(plan.projections, plan.output, child)
     case plan: SortExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       if (child.isInstanceOf[ExpandExec]) {
@@ -178,6 +190,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
           ColumnarSortExec(plan.sortOrder, plan.global, child, plan.testSpillFrequency)
       }
     case plan: ShuffleExchangeExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       if ((child.supportsColumnar || columnarConf.enablePreferColumnar) && columnarConf.enableColumnarShuffle) {
@@ -195,6 +208,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
         plan.withNewChildren(Seq(child))
       }
     case plan: ShuffledHashJoinExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val maybeOptimized = if (
         GazellePluginConfig.getSessionConf.resizeShuffledHashJoinInputPartitions &&
             ShufflePartitionUtils.withCustomShuffleReaders(plan)) {
@@ -217,6 +231,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
         left,
         right)
     case plan: BroadcastQueryStageExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       logDebug(
         s"Columnar Processing for ${plan.getClass} is currently supported, actual plan is ${plan.plan}.")
       plan.plan match {
@@ -228,6 +243,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
         case other => plan
       }
     case plan: BroadcastExchangeExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       if (isSupportAdaptive)
@@ -235,6 +251,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       else
         ColumnarBroadcastExchangeExec(plan.mode, child)
     case plan: BroadcastHashJoinExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       if (columnarConf.enableColumnarBroadcastJoin) {
         val left = replaceWithColumnarPlan(plan.left)
         val right = replaceWithColumnarPlan(plan.right)
@@ -255,6 +272,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       }
 
     case plan: SortMergeJoinExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       if (columnarConf.enableColumnarSortMergeJoin) {
         val left = replaceWithColumnarPlan(plan.left)
         val right = replaceWithColumnarPlan(plan.right)
@@ -275,12 +293,14 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       }
 
     case plan: ShuffleQueryStageExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       plan
 
     case plan
       if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan)
         && columnarConf.enableColumnarShuffle) =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
       val partitionSpecs =
         SparkShimLoader.getSparkShims.getPartitionSpecsOfCustomShuffleReaderExec(plan)
@@ -311,6 +331,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       }
 
     case plan: WindowExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       try {
         ColumnarWindowExec.createWithOptimizations(
           plan.windowExpression,
@@ -324,6 +345,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
           plan
       }
     case plan: LocalWindowExec =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       try {
         ColumnarWindowExec.createWithOptimizations(
           plan.windowExpression,
@@ -337,6 +359,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
           plan
       }
     case p =>
+    logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val children = plan.children.map(replaceWithColumnarPlan)
       logDebug(s"Columnar Processing for ${p.getClass} is currently not supported.")
       p.withNewChildren(children.map(fallBackBroadcastExchangeOrNot))
@@ -384,7 +407,6 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
   var isSupportAdaptive: Boolean = true
 
   def replaceWithColumnarPlan(plan: SparkPlan): SparkPlan = plan match {
-    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
 
     // To get ColumnarBroadcastExchangeExec back from the fallback that for DPP reuse.
     case RowToColumnarExec(broadcastQueryStageExec: BroadcastQueryStageExec)
@@ -392,12 +414,14 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
         case BroadcastExchangeExec(_, _: DataToArrowColumnarExec) => true
         case _ => false
       }) =>
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       logDebug(s"Due to a fallback of BHJ inserted into plan." +
         s" See above override in BroadcastQueryStageExec")
       val localBroadcastXchg = broadcastQueryStageExec.plan.asInstanceOf[BroadcastExchangeExec]
       val dataToArrowColumnar = localBroadcastXchg.child.asInstanceOf[DataToArrowColumnarExec]
       ColumnarBroadcastExchangeExec(localBroadcastXchg.mode, dataToArrowColumnar)
     case plan: RowToColumnarExec =>
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val child = replaceWithColumnarPlan(plan.child)
       if (columnarConf.enableArrowRowToColumnar) {
         logDebug(s"ColumnarPostOverrides ArrowRowToColumnarExec(${child.getClass})")
@@ -413,12 +437,16 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
         RowToArrowColumnarExec(child)
       }
     case ColumnarToRowExec(child: ColumnarShuffleExchangeAdaptor) =>
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       replaceWithColumnarPlan(child)
     case ColumnarToRowExec(child: ColumnarBroadcastExchangeAdaptor) =>
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       replaceWithColumnarPlan(child)
     case ColumnarToRowExec(child: CoalesceBatchesExec) =>
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       plan.withNewChildren(Seq(replaceWithColumnarPlan(child.child)))
     case plan: ColumnarToRowExec =>
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       if (columnarConf.enableArrowColumnarToRow) {
         val child = replaceWithColumnarPlan(plan.child)
         logDebug(s"ColumnarPostOverrides ArrowColumnarToRowExec(${child.getClass})")
@@ -438,6 +466,7 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
           c.isInstanceOf[ColumnarToRowExec]) =>
       // This is a fix for when DPP and AQE both enabled,
       // ColumnarExchange maybe child as a Row SparkPlan.
+    logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
       val children = r.children.map {
         case c: ColumnarToRowExec =>
           if (columnarConf.enableArrowColumnarToRow) {
