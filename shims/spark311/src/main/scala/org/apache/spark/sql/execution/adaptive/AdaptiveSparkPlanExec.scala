@@ -249,6 +249,8 @@ case class AdaptiveSparkPlanExec(
         val (newPhysicalPlan, newLogicalPlan) = reOptimize(logicalPlan)
         val origCost = costEvaluator.evaluateCost(currentPhysicalPlan)
         val newCost = costEvaluator.evaluateCost(newPhysicalPlan)
+        logWarning(s"========== currphysical plan metrics ${currentPhysicalPlan.metrics}")
+        logWarning(s"========== newphysical plan metrics ${newPhysicalPlan.metrics}")
         if (newCost < origCost ||
             (newCost == origCost && currentPhysicalPlan != newPhysicalPlan)) {
           logOnLevel(s"Plan changed from $currentPhysicalPlan to $newPhysicalPlan")

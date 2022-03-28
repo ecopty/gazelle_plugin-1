@@ -316,7 +316,7 @@ class ColumnarConditionProjector(
         }
         numOutputBatches += 1
         numOutputRows += resColumnarBatch.numRows
-                    logWarning(s"=========== createIterator ColumnarConditionProjector updating numOutputRows with ${resColumnarBatch.numRows} - metrics now ${metrics}")
+           //         logWarning(s"=========== createIterator ColumnarConditionProjector updating numOutputRows with ${resColumnarBatch.numRows} - metrics now ${metrics}")
 
         val numCols = resColumnarBatch.numCols
         //logInfo(s"result has ${resColumnarBatch.numRows}, first row is ${(0 until numCols).map(resColumnarBatch.column(_).getUTF8String(0))}")
