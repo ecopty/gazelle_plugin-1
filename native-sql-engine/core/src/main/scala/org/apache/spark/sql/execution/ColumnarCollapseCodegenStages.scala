@@ -140,10 +140,14 @@ case class ColumnarCollapseCodegenStages(
 
   private def existsJoins(plan: SparkPlan, count: Int = 0): Boolean = plan match {
     case p: ColumnarBroadcastHashJoinExec =>
+                      logWarning(s"*** existsJoins: for ${p.getClass} metrics ${p.metrics}")
+
       if (p.condition.isDefined) return true
       if (count >= 1) true
       else plan.children.map(existsJoins(_, count + 1)).exists(_ == true)
     case p: ColumnarShuffledHashJoinExec =>
+                  logWarning(s"*** existsJoins: for ${p.getClass} metrics ${p.metrics}")
+
       if (p.condition.isDefined) return true
       if (count >= 1) true
       else plan.children.map(existsJoins(_, count + 1)).exists(_ == true)
@@ -153,6 +157,8 @@ case class ColumnarCollapseCodegenStages(
       if (count >= 1) true
       else plan.children.map(existsJoins(_, count + 1)).exists(_ == true)
     case p: ColumnarConditionProjectExec
+                  logWarning(s"*** existsJoins:  ${p.getClass} metrics ${p.metrics}")
+
         if (containsSubquery(p.condition) || containsSubquery(p.projectList)) =>
       false
     case p: ColumnarCodegenSupport if p.supportColumnarCodegen =>
@@ -179,6 +185,8 @@ case class ColumnarCollapseCodegenStages(
       skip_smj: Boolean = false): SparkPlan = plan.child match {
     case p: ColumnarBroadcastHashJoinExec
       if plan.condition == null && !containsExpression(plan.projectList) =>
+      logWarning(s"*** containsExpression: for ${p.getClass} metrics ${p.metrics}")
+
       ColumnarBroadcastHashJoinExec(
         p.leftKeys,
         p.rightKeys,
@@ -191,6 +199,8 @@ case class ColumnarCollapseCodegenStages(
         nullAware = p.isNullAwareAntiJoin)
     case p: ColumnarShuffledHashJoinExec
         if plan.condition == null && !containsExpression(plan.projectList) =>
+        logWarning(s"*** joinOptimization: for ${p.getClass} metrics ${p.metrics}")
+
       ColumnarShuffledHashJoinExec(
         p.leftKeys,
         p.rightKeys,
@@ -245,6 +255,8 @@ case class ColumnarCollapseCodegenStages(
       case p =>
         p match {
           case exec: ColumnarConditionProjectExec =>
+          logWarning(s"*** insertInputAdapter: ${exec.getClass} metrics ${exec.metrics}")
+
             val after_opt = joinOptimization(exec)
             if (after_opt.isInstanceOf[ColumnarConditionProjectExec]) {
               after_opt.withNewChildren(after_opt.children.map(c => {

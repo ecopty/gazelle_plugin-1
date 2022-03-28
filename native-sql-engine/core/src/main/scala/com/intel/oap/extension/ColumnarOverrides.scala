@@ -132,6 +132,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
       columnarChild match {
         case ch: ColumnarConditionProjectExec =>
+          logWarning(s"*** ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${ch.getClass} metrics ${ch.metrics}")
           if (ch.projectList == null) {
             ColumnarConditionProjectExec(ch.condition, plan.projectList, ch.child)
           } else {
@@ -187,6 +188,8 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       }
       child match {
         case p: CoalesceBatchesExec =>
+           logWarning(s"*** ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${p.getClass} metrics ${p.metrics}")
+
           ColumnarSortExec(plan.sortOrder, plan.global, p.child, plan.testSpillFrequency)
         case _ =>
           ColumnarSortExec(plan.sortOrder, plan.global, child, plan.testSpillFrequency)
@@ -446,6 +449,7 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
       replaceWithColumnarPlan(child)
     case ColumnarToRowExec(child: CoalesceBatchesExec) =>
     logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} metrics ${plan.metrics}")
+    logWarning(s"*** ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${child.getClass} metrics ${child.metrics}")
       plan.withNewChildren(Seq(replaceWithColumnarPlan(child.child)))
     case plan: ColumnarToRowExec =>
     logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} metrics ${plan.metrics}")
