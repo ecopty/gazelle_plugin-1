@@ -238,6 +238,8 @@ case class ColumnarHashAggregateExec(
             ConverterUtils.releaseArrowRecordBatch(output_rb)
             eval_elapse += System.nanoTime() - beforeEval
             numOutputRows += outputNumRows
+                                    logWarning(s"=========== executeColumnar ColumnarHAshAaggregateExec updating numOutputRows with ${outputNumRows} - metrics now ${metrics}")
+
             numOutputBatches += 1
             new ColumnarBatch(output.map(v => v.asInstanceOf[ColumnVector]), outputNumRows)
           }
@@ -632,6 +634,8 @@ case class ColumnarHashAggregateExec(
     val procTime = longMetric("processTime")
     procTime.set(process_time / 1000000)
     numOutputRows += out_num_rows
+                                        logWarning(s"=========== updatMetrics ColumnarHAshAaggregateExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
+
   }
 
   override def getChild: SparkPlan = child

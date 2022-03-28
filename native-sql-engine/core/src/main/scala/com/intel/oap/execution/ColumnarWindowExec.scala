@@ -300,6 +300,7 @@ case class ColumnarWindowExec(windowExpression: Seq[NamedExpression],
             val emitCost = System.nanoTime() - prev4
             totalTime += TimeUnit.NANOSECONDS.toMillis(emitCost)
             numOutputRows += batch.numRows()
+            logWarning(s"=========== doExecuteColumnar ColumnarWindowExec updating numOutputRows with ${batch.numRows()} - metrics now ${metrics}")
             numOutputBatches += 1
             batch
         }.toIterator

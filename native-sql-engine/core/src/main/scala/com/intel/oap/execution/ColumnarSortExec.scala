@@ -161,6 +161,9 @@ case class ColumnarSortExec(
     val procTime = longMetric("processTime")
     procTime.set(process_time / 1000000)
     numOutputRows += out_num_rows
+    logWarning(s"=========== updateMetrics ColumnarSortExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
+    numOutputRows
+
   }
 
   override def getChild: SparkPlan = child

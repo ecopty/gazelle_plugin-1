@@ -96,6 +96,8 @@ case class ColumnarGuardRule() extends Rule[SparkPlan] {
                   true, scanTime, numInputBatches, inputSize, tmpDir)
               inputColumnarRDD.map { r =>
                 numOutputRows += r.numRows()
+                                                logWarning(s"=========== tryConvertToColumnar ColumnarGuardRule updating numOutputRows with ${r.numRows()} - metrics now ${metrics}")
+
                 numOutputBatches += 1
                 r
               }

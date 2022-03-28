@@ -215,6 +215,8 @@ case class ColumnarArrowEvalPythonExec(udfs: Seq[PythonUDF], resultAttrs: Seq[At
           val numRows = input_cb.numRows
           numOutputBatches += 1
           numOutputRows += numRows
+                                                                    logWarning(s"=========== doExecuteColumnar ColumnarArrowEvalPythonExec updating numOutputRows with ${numRows} - metrics now ${metrics}")
+
           procTime += (System.nanoTime() - start_time) / 1000000
           new ColumnarBatch(joinedVectors, numRows)
           /* below is for in case there will be some scala projection in demand

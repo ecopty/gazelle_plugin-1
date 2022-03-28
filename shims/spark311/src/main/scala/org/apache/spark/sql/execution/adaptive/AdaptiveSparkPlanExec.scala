@@ -302,8 +302,12 @@ case class AdaptiveSparkPlanExec(
   }
 
   override def doExecute(): RDD[InternalRow] = {
+    logWarning(s"=========== calling doExecute on getFinalPhysicalPlan")
+
     val rdd = getFinalPhysicalPlan().execute()
+    logWarning(s"===========  DONE   calling doExecute on getFinalPhysicalPlan")
     finalPlanUpdate
+    logWarning(s"===========  Now after finalPlanUpdate")
     rdd
   }
 

@@ -162,7 +162,10 @@ case class ColumnarConditionProjectExec(
     val numOutputRows = longMetric("numOutputRows")
     val procTime = longMetric("processTime")
     procTime.set(process_time / 1000000)
+    logWarning(s"=========== updateMetrics ColumnarConditionProjectExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
     numOutputRows += out_num_rows
+    logWarning(s"=========== updateMetrics ColumnarConditionProjectExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
+    numOutputRows
   }
 
   override def getChild: SparkPlan = child

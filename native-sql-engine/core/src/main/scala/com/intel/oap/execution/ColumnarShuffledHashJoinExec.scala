@@ -174,6 +174,9 @@ case class ColumnarShuffledHashJoinExec(
     val procTime = longMetric("processTime")
     procTime.set(process_time / 1000000)
     numOutputRows += out_num_rows
+                                                          logWarning(s"=========== getBuildPlan ColumnarShuffledHashJoinExec updating numOutputRows with ${numOutputRows} - metrics now ${metrics}")
+numOutputRows
+
   }
 
   override protected def doExecute(): RDD[InternalRow] = {
@@ -380,6 +383,8 @@ case class ColumnarShuffledHashJoinExec(
           ConverterUtils.releaseArrowRecordBatch(output_rb)
           eval_elapse += System.nanoTime() - beforeEval
           numOutputRows += outputNumRows
+                                                                    logWarning(s"=========== doExecuteColumnar ColumnarShuffledHashJoinExec updating numOutputRows with ${numOutputRows} - metrics now ${metrics}")
+
           new ColumnarBatch(output.map(v => v.asInstanceOf[ColumnVector]).toArray, outputNumRows)
         }
 
@@ -574,6 +579,7 @@ case class ColumnarShuffledHashJoinExec(
             ConverterUtils.releaseArrowRecordBatch(output_rb)
             eval_elapse += System.nanoTime() - beforeEval
             numOutputRows += outputNumRows
+            logWarning(s"=========== getCodeGenIterator ColumnarShuffledHashJoinExec updating numOutputRows with ${numOutputRows} - metrics now ${metrics}")
             new ColumnarBatch(
               output.map(v => v.asInstanceOf[ColumnVector]).toArray,
               outputNumRows)

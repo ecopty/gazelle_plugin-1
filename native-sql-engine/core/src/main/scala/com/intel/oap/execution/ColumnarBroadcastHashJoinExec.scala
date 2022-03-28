@@ -259,7 +259,10 @@ case class ColumnarBroadcastHashJoinExec(
     val numOutputRows = longMetric("numOutputRows")
     val procTime = longMetric("processTime")
     procTime.set(process_time / 1000000)
+
     numOutputRows += out_num_rows
+    logWarning(s"=========== updateMetrics ColumnarBroadcastHashJoinExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
+    numOutputRows += 0
   }
 
   override def getChild: SparkPlan = streamedPlan
@@ -452,7 +455,10 @@ case class ColumnarBroadcastHashJoinExec(
             eval_elapse += System.nanoTime() - beforeEval
             new ColumnarBatch(output.map(v => v.asInstanceOf[ColumnVector]).toArray, outputNumRows)
           }
+                  
+
           numOutputRows += outputNumRows
+          logWarning(s"=========== updateMetrics ColumnarBroadcastHashJoinExec updating numOutputRows with ${outputNumRows} - metrics now ${metrics}")
           resBatch
         }
       }
@@ -639,6 +645,8 @@ case class ColumnarBroadcastHashJoinExec(
           ConverterUtils.releaseArrowRecordBatch(output_rb)
           eval_elapse += System.nanoTime() - beforeEval
           numOutputRows += outputNumRows
+              logWarning(s"=========== executeColumnar ColumnarBroadcastHashJoinExec updating numOutputRows with ${outputNumRows} - metrics now ${metrics}")
+
           new ColumnarBatch(output.map(v => v.asInstanceOf[ColumnVector]).toArray, outputNumRows)
         }
       }

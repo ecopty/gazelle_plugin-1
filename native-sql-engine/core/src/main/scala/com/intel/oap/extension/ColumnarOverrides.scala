@@ -109,6 +109,8 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
               true, scanTime, numInputBatches, inputSize, tmpDir)
           inputColumnarRDD.map { r =>
             numOutputRows += r.numRows()
+                                logWarning(s"=========== doExecuteColumnar ColumnarOverrides updating numOutputRows with ${r.numRows()} - metrics now ${metrics}")
+
             numOutputBatches += 1
             r
           }
