@@ -313,7 +313,7 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
         case shuffle: ColumnarShuffleExchangeAdaptor =>
           logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
           val metrics = shuffle.metrics
-          logWarning(s"ColumnarShuffleExchangeAdaptor1 shuffle size ${metrics("dataSize")}")
+          logWarning(s"ColumnarShuffleExchangeAdaptor1 shuffle size ${metrics("dataSize")} all metrics ${metrics}")
 
           CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(child, partitionSpecs))
@@ -322,13 +322,13 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
           shuffleQueryStageExec.plan match {
             case s: ColumnarShuffleExchangeAdaptor =>
               val metrics = s.metrics
-              logWarning(s"ColumnarShuffleExchangeAdaptor1 shuffle size ${metrics("dataSize")}")
+              logWarning(s"ColumnarShuffleExchangeAdaptor1 shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
               logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(child, partitionSpecs))
             case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
               val metrics = s.metrics
-              logWarning(s"ReusedExchangeExec shuffle size ${metrics("dataSize")}")
+              logWarning(s"ReusedExchangeExec shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
               logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(

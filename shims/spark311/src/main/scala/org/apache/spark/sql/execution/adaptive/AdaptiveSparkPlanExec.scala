@@ -41,6 +41,7 @@ import org.apache.spark.sql.execution.exchange._
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLAdaptiveExecutionUpdate, SparkListenerSQLAdaptiveSQLMetricUpdates, SQLPlanMetric}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.util.ThreadUtils
+import com.intel.oap.sql.shims.SparkShimLoader
 
 /**
  * A root node to execute the query plan adaptively. It splits the query plan into independent
@@ -249,6 +250,40 @@ case class AdaptiveSparkPlanExec(
         val (newPhysicalPlan, newLogicalPlan) = reOptimize(logicalPlan)
         val origCost = costEvaluator.evaluateCost(currentPhysicalPlan)
         val newCost = costEvaluator.evaluateCost(newPhysicalPlan)
+        
+        
+        
+        ////////////////////////////////////////////////////////////
+        logWarning(s"---------------------------------------------- \n START collecting Shuffles \n")
+
+        val shuffles = newPhysicalPlan.collect {
+          case plan
+          if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan)
+            //&& columnarConf.enableColumnarShuffle) =>
+          ) =>
+          logWarning(s"collecting Shuffles ${plan.getClass} metrics ${plan.metrics}")
+          val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
+          child match {
+            case shuffle: ColumnarShuffleExchangeAdaptor =>
+              val metrics = shuffle.metrics
+              logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")} all metrics ${metrics}")
+              shuffle //returning the shuffle
+            // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
+            case shuffleQueryStageExec: ShuffleQueryStageExec =>
+              shuffleQueryStageExec.plan match {
+                case s: ColumnarShuffleExchangeAdaptor =>
+                  val metrics = s.metrics
+                  logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
+                  s //returning shufffle
+                case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
+                  val metrics = s.metrics
+                  logWarning(s"ReusedExchangeExec shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
+                  s //returning shuffle
+              }
+            }
+        }
+        logWarning(s"Collecting Shuffles returned ${shuffles.size}")
+        ///////////////////////////////////////////////////////////////////////////
         logWarning(s"========== currphysical plan metrics ${currentPhysicalPlan.metrics}")
         logWarning(s"========== newphysical plan metrics ${newPhysicalPlan.metrics}")
         if (newCost < origCost ||
