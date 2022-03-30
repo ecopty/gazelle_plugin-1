@@ -221,8 +221,8 @@ case class AdaptiveSparkPlanExec(
         events.drainTo(rem)
         (Seq(nextMsg) ++ rem.asScala).foreach {
           case StageSuccess(stage, res) =>
-            logWarning(s"==StageSuccess ${stage.getClass} -- ${stage.metrics} ")
-            stage.metrics.valuesIterator.foreach{ value =>  logWarning(s"metrics value ${value}") }
+            //logWarning(s"==StageSuccess ${stage.getClass} -- ${stage.metrics} ")
+            //stage.metrics.valuesIterator.foreach{ value =>  logWarning(s"metrics value ${value}") }
             stage.resultOption.set(Some(res))
           case StageFailure(stage, ex) =>
             errors.append(ex)
@@ -255,68 +255,8 @@ case class AdaptiveSparkPlanExec(
         
         
         ////////////////////////////////////////////////////////////
-        logWarning(s"---------------------------------------------- \n START collecting Shuffles \n")
-
-      //val shuffles = newPhysicalPlan.collect {
-      //  case plan
-      //  if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan)
-      //    //&& columnarConf.enableColumnarShuffle) =>
-      //  ) =>
-      //  logWarning(s"collecting Shuffles ${plan.getClass} metrics ${plan.metrics}")
-      //  val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
-
-      //  val metrics = child.metrics
-      //  if (metrics.contains("dataSize"))
-      //  {
-      //    logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")} all metrics ${metrics}")
-      //    child //returning the shuffle
-      //  }
-      //  else
-      //  {
-      //    logWarning(s"no data size in shuffle all metrics ${metrics}")
-      //  }
-      //  //child match {
-      //  //  case shuffle: ColumnarShuffleExchangeAdaptor =>
-      //  //    val metrics = shuffle.metrics
-      //  //    logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")} all metrics ${metrics}")
-      //  //    shuffle //returning the shuffle
-      //    // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
-      //  //  case shuffleQueryStageExec: ShuffleQueryStageExec =>
-      //  //    shuffleQueryStageExec.plan match {
-      //   //     case s: ColumnarShuffleExchangeAdaptor =>
-      //   //       val metrics = s.metrics
-      //   //       logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
-      //   //       s //returning shufffle
-      //   //     case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
-      //   //       val metrics = s.metrics
-      //   //       logWarning(s"ReusedExchangeExec shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
-      //   //       s //returning shuffle
-      //   //   }
-      //   // }
-      //}
-      //logWarning(s"Collecting Shuffles returned ${shuffles.size}")
-
-        logWarning(s"BEFORE calling getShuffleSize currentPhysicalPlan shuffle Size ${shuffleSize}")
-        getShuffleSize(currentPhysicalPlan)
-        //currentPhysicalPlan.children.foreach{
-        //child match {
-        //case shuffle =>
-        //  val smetrics = shuffle.metrics
-        //  if (smetrics.contains("dataSize"))
-        //  {
-        //    logWarning(s"child shuffle ${shuffle.getClass} shuffle size ${smetrics("dataSize")}")
-        //    if (smetrics("dataSize").value > 0)
-        //      shuffleSize += smetrics("dataSize").value
-        //  }
-         // else
-         //   logWarning(s"No dataSize for child shuffle ${shuffle.getClass}")
-
-        //}
-        //logWarning(s"Collecting Shuffles returned ${shuffles.size}")
-        logWarning(s"currentPhysicalPlan shuffle Size ${shuffleSize}")
+        //getShuffleSize(currentPhysicalPlan)
         ///////////////////////////////////////////////////////////////////////////
-        logWarning(s"========== currphysical plan metrics ${currentPhysicalPlan.metrics}")
-        logWarning(s"========== newphysical plan metrics ${newPhysicalPlan.metrics}")
         if (newCost < origCost ||
             (newCost == origCost && currentPhysicalPlan != newPhysicalPlan)) {
           logOnLevel(s"Plan changed from $currentPhysicalPlan to $newPhysicalPlan")
@@ -370,12 +310,8 @@ case class AdaptiveSparkPlanExec(
   }
 
   override def doExecute(): RDD[InternalRow] = {
-    logWarning(s"=========== calling doExecute on getFinalPhysicalPlan")
-
     val rdd = getFinalPhysicalPlan().execute()
-    logWarning(s"===========  DONE   calling doExecute on getFinalPhysicalPlan")
     finalPlanUpdate
-    logWarning(s"===========  Now after finalPlanUpdate")
     rdd
   }
 

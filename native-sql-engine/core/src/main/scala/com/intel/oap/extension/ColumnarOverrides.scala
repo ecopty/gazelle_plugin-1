@@ -313,6 +313,7 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
           logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
           val metrics = shuffle.metrics
           logWarning(s"ColumnarShuffleExchangeAdaptor1 shuffle size ${metrics("dataSize").value} all metrics ${metrics}")
+          val skip : Boolean = false
           if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
           {
             logWarning(s"shuffle size ${metrics("dataSize").value} threshold ${columnarConf.shuffleThreshold}")
@@ -322,15 +323,23 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
             {
                 logWarning(s"Setting columnar.enabled to false")
                 session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                skip = true
+                val children = plan.children.map(replaceWithColumnarPlan)
+                logDebug(s"Columnar Processing for ${plan.getClass} is not currently supported.")
+                plan.withNewChildren(children)
             }
           }
-          CoalesceBatchesExec(
+          if (!skip)
+          {
+            CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(child, partitionSpecs))
+          }
         // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
         case shuffleQueryStageExec: ShuffleQueryStageExec =>
           shuffleQueryStageExec.plan match {
             case s: ColumnarShuffleExchangeAdaptor =>
               val metrics = s.metrics
+              val skip : Boolean = false
               logWarning(s"ColumnarShuffleExchangeAdaptor1 shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
               if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
               {
@@ -341,13 +350,21 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
                 {
                     logWarning(s"Setting columnar.enabled to false")
                     session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                    skip = true
+                    val children = plan.children.map(replaceWithColumnarPlan)
+                    logDebug(s"Columnar Processing for ${plan.getClass} is not currently supported.")
+                    plan.withNewChildren(children)
                 }
               }
-              logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
-              CoalesceBatchesExec(
-                ColumnarCustomShuffleReaderExec(child, partitionSpecs))
+              if (!skip)
+              {
+                logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+                CoalesceBatchesExec(
+                  ColumnarCustomShuffleReaderExec(child, partitionSpecs))
+              }
             case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
               val metrics = s.metrics
+              val skip : Boolean = false
               logWarning(s"ReusedExchangeExec shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
               if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
               {
@@ -358,13 +375,20 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
                 {
                     logWarning(s"Setting columnar.enabled to false")
                     session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                    skip = true
+                    val children = plan.children.map(replaceWithColumnarPlan)
+                    logDebug(s"Columnar Processing for ${plan.getClass} is not currently supported.")
+                    plan.withNewChildren(children)
                 }
               }
-              logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
-              CoalesceBatchesExec(
-                ColumnarCustomShuffleReaderExec(
-                  child,
-                  partitionSpecs))
+              if (!skip)
+              {
+                logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+                CoalesceBatchesExec(
+                  ColumnarCustomShuffleReaderExec(
+                    child,
+                    partitionSpecs))
+              }
             case _ =>
               plan
           }
