@@ -86,6 +86,12 @@ class GazellePluginConfig(conf: SQLConf) extends Logging {
   val forceShuffledHashJoin: Boolean =
     conf.getConfString("spark.oap.sql.columnar.forceshuffledhashjoin", "false").toBoolean &&
         enableCpu
+///////////////////
+  val shuffleThresholdEnabled: Boolean =  
+    conf.getConfString("spark.oap.sql.columnar.shuffleThresholdEnabled", "true")
+        .toBoolean 
+  val shuffleThreshold: Int =
+    conf.getConfString("spark.oap.sql.columnar.shuffleThreshold", "1000000").toInt
 
   val resizeShuffledHashJoinInputPartitions: Boolean =
     conf.getConfString("spark.oap.sql.columnar.shuffledhashjoin.resizeinputpartitions", "false")
