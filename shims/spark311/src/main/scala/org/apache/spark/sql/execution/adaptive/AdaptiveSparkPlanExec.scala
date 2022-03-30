@@ -41,8 +41,8 @@ import org.apache.spark.sql.execution.exchange._
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLAdaptiveExecutionUpdate, SparkListenerSQLAdaptiveSQLMetricUpdates, SQLPlanMetric}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.util.ThreadUtils
-import com.intel.oap.sql.shims.SparkShimLoader
 
+//import com.intel.oap.sql.shims.SparkShimLoader
 /**
  * A root node to execute the query plan adaptively. It splits the query plan into independent
  * stages and executes them in order according to their dependencies. The query stage
@@ -138,6 +138,7 @@ case class AdaptiveSparkPlanExec(
   @volatile private var currentPhysicalPlan = initialPlan
 
   private var isFinalPlan = false
+  private var shuffleSize : Long = 0
 
   private var currentStageId = 0
 
@@ -256,33 +257,63 @@ case class AdaptiveSparkPlanExec(
         ////////////////////////////////////////////////////////////
         logWarning(s"---------------------------------------------- \n START collecting Shuffles \n")
 
-        val shuffles = newPhysicalPlan.collect {
-          case plan
-          if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan)
-            //&& columnarConf.enableColumnarShuffle) =>
-          ) =>
-          logWarning(s"collecting Shuffles ${plan.getClass} metrics ${plan.metrics}")
-          val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
-          child match {
-            case shuffle: ColumnarShuffleExchangeAdaptor =>
-              val metrics = shuffle.metrics
-              logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")} all metrics ${metrics}")
-              shuffle //returning the shuffle
-            // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
-            case shuffleQueryStageExec: ShuffleQueryStageExec =>
-              shuffleQueryStageExec.plan match {
-                case s: ColumnarShuffleExchangeAdaptor =>
-                  val metrics = s.metrics
-                  logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
-                  s //returning shufffle
-                case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
-                  val metrics = s.metrics
-                  logWarning(s"ReusedExchangeExec shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
-                  s //returning shuffle
-              }
-            }
-        }
-        logWarning(s"Collecting Shuffles returned ${shuffles.size}")
+      //val shuffles = newPhysicalPlan.collect {
+      //  case plan
+      //  if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan)
+      //    //&& columnarConf.enableColumnarShuffle) =>
+      //  ) =>
+      //  logWarning(s"collecting Shuffles ${plan.getClass} metrics ${plan.metrics}")
+      //  val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
+
+      //  val metrics = child.metrics
+      //  if (metrics.contains("dataSize"))
+      //  {
+      //    logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")} all metrics ${metrics}")
+      //    child //returning the shuffle
+      //  }
+      //  else
+      //  {
+      //    logWarning(s"no data size in shuffle all metrics ${metrics}")
+      //  }
+      //  //child match {
+      //  //  case shuffle: ColumnarShuffleExchangeAdaptor =>
+      //  //    val metrics = shuffle.metrics
+      //  //    logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")} all metrics ${metrics}")
+      //  //    shuffle //returning the shuffle
+      //    // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
+      //  //  case shuffleQueryStageExec: ShuffleQueryStageExec =>
+      //  //    shuffleQueryStageExec.plan match {
+      //   //     case s: ColumnarShuffleExchangeAdaptor =>
+      //   //       val metrics = s.metrics
+      //   //       logWarning(s"collecting Shuffles shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
+      //   //       s //returning shufffle
+      //   //     case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
+      //   //       val metrics = s.metrics
+      //   //       logWarning(s"ReusedExchangeExec shuffle size ${metrics("dataSize")}  all metrics ${metrics}")
+      //   //       s //returning shuffle
+      //   //   }
+      //   // }
+      //}
+      //logWarning(s"Collecting Shuffles returned ${shuffles.size}")
+
+        logWarning(s"BEFORE calling getShuffleSize currentPhysicalPlan shuffle Size ${shuffleSize}")
+        getShuffleSize(currentPhysicalPlan)
+        //currentPhysicalPlan.children.foreach{
+        //child match {
+        //case shuffle =>
+        //  val smetrics = shuffle.metrics
+        //  if (smetrics.contains("dataSize"))
+        //  {
+        //    logWarning(s"child shuffle ${shuffle.getClass} shuffle size ${smetrics("dataSize")}")
+        //    if (smetrics("dataSize").value > 0)
+        //      shuffleSize += smetrics("dataSize").value
+        //  }
+         // else
+         //   logWarning(s"No dataSize for child shuffle ${shuffle.getClass}")
+
+        //}
+        //logWarning(s"Collecting Shuffles returned ${shuffles.size}")
+        logWarning(s"currentPhysicalPlan shuffle Size ${shuffleSize}")
         ///////////////////////////////////////////////////////////////////////////
         logWarning(s"========== currphysical plan metrics ${currentPhysicalPlan.metrics}")
         logWarning(s"========== newphysical plan metrics ${newPhysicalPlan.metrics}")
@@ -436,7 +467,25 @@ case class AdaptiveSparkPlanExec(
 
     this.inputPlan == obj.asInstanceOf[AdaptiveSparkPlanExec].inputPlan
   }
+  private def getShuffleSize(plan: SparkPlan): Unit = 
+  {
 
+    plan.children.foreach{
+      case c : SparkPlan =>
+        val metrics = c.metrics
+        if (metrics.contains("dataSize") && metrics("dataSize").value > 0)
+        {
+          shuffleSize += metrics("dataSize").value
+          logWarning(s"\tchild shuffle ${c.getClass} shuffle size ${metrics("dataSize")}")
+        }
+        else
+        {
+          logWarning(s"\tchild shuffle ${c.getClass} has no dataSize:  ${metrics}")
+        }
+        getShuffleSize(c)
+      case _ =>
+    }
+  } 
   /**
    * This method is called recursively to traverse the plan tree bottom-up and create a new query
    * stage or try reusing an existing stage if the current node is an [[Exchange]] node and all of
