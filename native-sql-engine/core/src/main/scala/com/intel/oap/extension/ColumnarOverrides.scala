@@ -318,13 +318,13 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
           {
             logWarning(s"shuffle size ${metrics("dataSize").value} threshold ${columnarConf.shuffleThreshold}")
           
-            var dataSize = metrics("dataSize").value
-            if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
-            {
-                logWarning(s"Setting columnar.enabled to false")
-                session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
-                skip = true
-            }
+            // var dataSize = metrics("dataSize").value
+            // if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
+            // {
+            //     logWarning(s"Setting columnar.enabled to false")
+            //     session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+            //     skip = true
+            // }
           }
           if (!skip)
           {
@@ -348,13 +348,13 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
               {
                 logWarning(s"shuffle size ${metrics("dataSize").value} threshold ${columnarConf.shuffleThreshold}")
               
-                var dataSize = metrics("dataSize").value
-                if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
-                {
-                    logWarning(s"Setting columnar.enabled to false")
-                    session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
-                    skip = true
-                }
+                // var dataSize = metrics("dataSize").value
+                // if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
+                // {
+                //     logWarning(s"Setting columnar.enabled to false")
+                //     session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                //     skip = true
+                // }
               }
               if (!skip)
               {
@@ -376,13 +376,13 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
               {
                 logWarning(s"shuffle size ${metrics("dataSize").value} threshold ${columnarConf.shuffleThreshold}")
               
-                var dataSize = metrics("dataSize").value
-                if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
-                {
-                    logWarning(s"Setting columnar.enabled to false")
-                    session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
-                    skip = true
-                }
+                //var dataSize = metrics("dataSize").value
+                // if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
+                // {
+                //     logWarning(s"Setting columnar.enabled to false")
+                //     session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                //     skip = true
+                // }
               }
               if (!skip)
               {
@@ -625,12 +625,12 @@ case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule wit
       val rule = postOverrides
       rule.setAdaptiveSupport(isSupportAdaptive)
       val tmpPlan = rule(plan)
-      logWarning(" AFTER postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
-      session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
+      //logWarning(" AFTER postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
+      //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
       collapseOverrides(tmpPlan)
     } else {
-      logWarning(" AFTER2 postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
-      session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
+      //logWarning(" AFTER2 postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
+      //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
       plan
     }
   }

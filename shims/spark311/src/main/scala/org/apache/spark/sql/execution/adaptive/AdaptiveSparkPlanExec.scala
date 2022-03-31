@@ -41,8 +41,8 @@ import org.apache.spark.sql.execution.exchange._
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLAdaptiveExecutionUpdate, SparkListenerSQLAdaptiveSQLMetricUpdates, SQLPlanMetric}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.util.ThreadUtils
+import com.intel.oap.sql.shims.SparkShimLoader
 
-//import com.intel.oap.sql.shims.SparkShimLoader
 /**
  * A root node to execute the query plan adaptively. It splits the query plan into independent
  * stages and executes them in order according to their dependencies. The query stage
@@ -252,10 +252,9 @@ case class AdaptiveSparkPlanExec(
         val origCost = costEvaluator.evaluateCost(currentPhysicalPlan)
         val newCost = costEvaluator.evaluateCost(newPhysicalPlan)
         
-        
-        
         ////////////////////////////////////////////////////////////
-        //getShuffleSize(currentPhysicalPlan)
+        getShuffleSize(currentPhysicalPlan)
+        logWarning(s"=========== shuffleSize after ${shuffleSize}")
         ///////////////////////////////////////////////////////////////////////////
         if (newCost < origCost ||
             (newCost == origCost && currentPhysicalPlan != newPhysicalPlan)) {
@@ -406,18 +405,46 @@ case class AdaptiveSparkPlanExec(
   private def getShuffleSize(plan: SparkPlan): Unit = 
   {
 
-    plan.children.foreach{
-      case c : SparkPlan =>
-        val metrics = c.metrics
-        if (metrics.contains("dataSize") && metrics("dataSize").value > 0)
+    if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan)
+        && columnarConf.enableColumnarShuffle)
+    {
+        logWarning(s"getShuffleSize for plan ===> isCustomShuffleReaderExec")
+        val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
+        var metrics = child.metrics
+        if (metrics.contains("dataSize"))
         {
-          shuffleSize += metrics("dataSize").value
-          logWarning(s"\tchild shuffle ${c.getClass} shuffle size ${metrics("dataSize")}")
+          logWarning(s"shuffle size ${metrics("dataSize").value}")
         }
         else
         {
-          logWarning(s"\tchild shuffle ${c.getClass} has no dataSize:  ${metrics}")
+          metrics = child.plan.metrics
+          if (metrics.contains("dataSize"))
+          {
+            logWarning(s"shuffle size1 ${metrics("dataSize").value}")
+          }
         }
+        if (metrics.contains("dataSize") && metrics("dataSize").value > 0)
+        {
+          shuffleSize += metrics("dataSize").value
+          logWarning(s"\t Special case shuffle ${plan.getClass} shuffle size ${metrics("dataSize")}")
+        }    
+        else
+        {
+          logWarning(s"\t Special case shuffle ${plan.getClass} has no dataSize:  ${metrics}")
+        }
+    }
+    val metrics = plan.metrics
+    if (metrics.contains("dataSize") && metrics("dataSize").value > 0)
+    {
+      shuffleSize += metrics("dataSize").value
+      logWarning(s"\tchild shuffle ${plan.getClass} shuffle size ${metrics("dataSize")}")
+    }
+    else
+    {
+      logWarning(s"\tchild shuffle ${plan.getClass} has no dataSize:  ${metrics}")
+    }
+    plan.children.foreach{
+      case c : SparkPlan =>
         getShuffleSize(c)
       case _ =>
     }
