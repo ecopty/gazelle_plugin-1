@@ -405,8 +405,7 @@ case class AdaptiveSparkPlanExec(
   private def getShuffleSize(plan: SparkPlan): Unit = 
   {
 
-    if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan)
-        && columnarConf.enableColumnarShuffle)
+    if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan))
     {
         logWarning(s"getShuffleSize for plan ===> isCustomShuffleReaderExec")
         val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
@@ -417,10 +416,17 @@ case class AdaptiveSparkPlanExec(
         }
         else
         {
-          metrics = child.plan.metrics
-          if (metrics.contains("dataSize"))
-          {
-            logWarning(s"shuffle size1 ${metrics("dataSize").value}")
+          //metrics = child.plan.metrics
+          child match {
+
+          // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
+          case shuffleQueryStageExec: ShuffleQueryStageExec =>
+            metrics = shuffleQueryStageExec.plan.metrics
+            if (metrics.contains("dataSize"))
+            {
+              logWarning(s"shuffle size1 ${metrics("dataSize").value}")
+            }
+          case _ =>
           }
         }
         if (metrics.contains("dataSize") && metrics("dataSize").value > 0)
