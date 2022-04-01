@@ -257,6 +257,10 @@ case class AdaptiveSparkPlanExec(
         finalStageOptimizerRules,
         Some((planChangeLogger, "AQE Final Query Stage Optimization")))
       isFinalPlan = true
+
+      //Make sure we re-enable columnar if it was disabled
+      logWarning(" AFTER final plan: resetting spark.oap.sql.columnar.enable To true")
+      context.session.sqlContext.setConf("spark.oap.sql.columnar.enable", "true")
       executionId.foreach(onUpdatePlan(_, Seq(currentPhysicalPlan)))
       currentPhysicalPlan
     }
