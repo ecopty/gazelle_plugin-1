@@ -311,8 +311,12 @@ case class ColumnarCollapseCodegenStages(
 
   def apply(plan: SparkPlan): SparkPlan = {
     if (columnarWholeStageEnabled) {
+      logWarning(s"***XXXXXXXXXXXXXXXXXX GETTING HERE: ${exec.getClass} ${codegenStageCounter.Get()}")
+
       insertWholeStageCodegen(plan)
     } else {
+      logWarning(s"***XXXXXXXDISABLEDXXXXXXXXXXX GETTING HERE: ${exec.getClass} ${codegenStageCounter.Get()}")
+
       plan
     }
   }
