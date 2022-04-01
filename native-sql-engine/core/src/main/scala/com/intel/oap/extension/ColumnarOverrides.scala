@@ -60,9 +60,9 @@ import scala.collection.mutable
 case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
   val columnarConf: GazellePluginConfig = GazellePluginConfig.getSessionConf
   var isSupportAdaptive: Boolean = true
-  
+
   def replaceWithColumnarPlan(plan: SparkPlan): SparkPlan = plan match {
-     
+
     case RowGuard(child: SparkPlan)
       if SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(child) =>
       replaceWithColumnarPlan(child)
@@ -116,7 +116,7 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
           logWarning(s"Columnar Processing for ${plan.getClass} - number of row ${numOutputRows}")
           inputColumnarRDD
         }
-        
+
       }
     case plan: CoalesceExec =>
     logWarning(s"ColumnarPreOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
@@ -317,7 +317,7 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
           if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
           {
             logWarning(s"shuffle size ${metrics("dataSize").value} threshold ${columnarConf.shuffleThreshold}")
-          
+
             var dataSize = metrics("dataSize").value
             if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
             {
@@ -348,7 +348,7 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
               if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
               {
                 logWarning(s"shuffle size ${metrics("dataSize").value} threshold ${columnarConf.shuffleThreshold}")
-              
+
                 var dataSize = metrics("dataSize").value
                 if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
                 {
@@ -377,7 +377,7 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
               if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
               {
                 logWarning(s"shuffle size ${metrics("dataSize").value} threshold ${columnarConf.shuffleThreshold}")
-              
+
                 var dataSize = metrics("dataSize").value
                 if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
                 {
@@ -523,7 +523,7 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
       replaceWithColumnarPlan(child)
     case ColumnarToRowExec(child: CoalesceBatchesExec) =>
     logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass}  child ${child.getClass}")
-    
+
       plan.withNewChildren(Seq(replaceWithColumnarPlan(child.child)))
     case plan: ColumnarToRowExec =>
     logWarning(s"**ColumnarPostOverrides: Callng replaceWithColumnarPlan for ${plan.getClass} ")
@@ -579,11 +579,11 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
 }
 
 case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule with Logging {
-  
+
   def columnarEnabled =
-    session.sqlContext.getConf("org.apache.spark.example.columnar.enabled", "true").trim.toBoolean 
+    session.sqlContext.getConf("org.apache.spark.example.columnar.enabled", "true").trim.toBoolean
   def codegendisable =
-    session.sqlContext.getConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "false").trim.toBoolean 
+    session.sqlContext.getConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "false").trim.toBoolean
   def conf = session.sparkContext.getConf
 
   // Do not create rules in class initialization as we should access SQLConf while creating the rules. At this time
@@ -631,7 +631,7 @@ case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule wit
       rule.setAdaptiveSupport(isSupportAdaptive)
       val tmpPlan = rule(plan)
       logWarning(" AFTER postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
-      //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
+      session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
 
       if (!codegendisable) // || columnarEnabled) //if code gen disabled and we are not doing columnar
         collapseOverrides(tmpPlan)

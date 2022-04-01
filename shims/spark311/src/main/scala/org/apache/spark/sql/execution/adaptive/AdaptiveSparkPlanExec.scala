@@ -137,7 +137,7 @@ case class AdaptiveSparkPlanExec(
 
   @volatile private var currentPhysicalPlan = initialPlan
 
-//TODO 
+//TODO
 // add checking condition of threshold and if enabled
 // if passes threshold, return to inputPlan and break from the loop OR turn of columnarEnabled
   private var isFinalPlan = false
@@ -179,7 +179,7 @@ case class AdaptiveSparkPlanExec(
   private def getFinalPhysicalPlan(): SparkPlan = lock.synchronized {
     if (isFinalPlan) return currentPhysicalPlan
     logWarning(s"=========== starting getFinalPhysicalPlan===============")
-      
+
     // In case of this adaptive plan being executed out of `withActive` scoped functions, e.g.,
     // `plan.queryExecution.rdd`, we need to set active session here as new plan nodes can be
     // created in the middle of the execution.
@@ -254,7 +254,7 @@ case class AdaptiveSparkPlanExec(
         val (newPhysicalPlan, newLogicalPlan) = reOptimize(logicalPlan)
         val origCost = costEvaluator.evaluateCost(currentPhysicalPlan)
         val newCost = costEvaluator.evaluateCost(newPhysicalPlan)
-        
+
         ////////////////////////////////////////////////////////////
         //getShuffleSize(currentPhysicalPlan)
         //logWarning(s"=========== shuffleSize after ${shuffleSize}")
@@ -278,7 +278,7 @@ case class AdaptiveSparkPlanExec(
         Some((planChangeLogger, "AQE Final Query Stage Optimization")))
       isFinalPlan = true
       logWarning(" AFTER getting final plan resetting org.apache.spark.example.columnar.enabled To true")
-      context.session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
+      //context.session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
       executionId.foreach(onUpdatePlan(_, Seq(currentPhysicalPlan)))
       currentPhysicalPlan
     }
@@ -407,7 +407,7 @@ case class AdaptiveSparkPlanExec(
 
     this.inputPlan == obj.asInstanceOf[AdaptiveSparkPlanExec].inputPlan
   }
-  private def getShuffleSize(plan: SparkPlan): Unit = 
+  private def getShuffleSize(plan: SparkPlan): Unit =
   {
 
     if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan))
@@ -438,7 +438,7 @@ case class AdaptiveSparkPlanExec(
         {
           shuffleSize += metrics("dataSize").value
           logWarning(s"\t Special case shuffle ${plan.getClass} shuffle size ${metrics("dataSize")}")
-        }    
+        }
         else
         {
           logWarning(s"\t Special case shuffle ${plan.getClass} has no dataSize:  ${metrics}")
@@ -459,7 +459,7 @@ case class AdaptiveSparkPlanExec(
         getShuffleSize(c)
       case _ =>
     }
-  } 
+  }
   /**
    * This method is called recursively to traverse the plan tree bottom-up and create a new query
    * stage or try reusing an existing stage if the current node is an [[Exchange]] node and all of
