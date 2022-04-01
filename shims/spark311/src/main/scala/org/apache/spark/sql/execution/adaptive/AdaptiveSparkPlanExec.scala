@@ -137,6 +137,9 @@ case class AdaptiveSparkPlanExec(
 
   @volatile private var currentPhysicalPlan = initialPlan
 
+//TODO 
+// add checking condition of threshold and if enabled
+// if passes threshold, return to inputPlan and break from the loop OR turn of columnarEnabled
   private var isFinalPlan = false
   private var shuffleSize : Long = 0
 
@@ -253,8 +256,8 @@ case class AdaptiveSparkPlanExec(
         val newCost = costEvaluator.evaluateCost(newPhysicalPlan)
         
         ////////////////////////////////////////////////////////////
-        getShuffleSize(currentPhysicalPlan)
-        logWarning(s"=========== shuffleSize after ${shuffleSize}")
+        //getShuffleSize(currentPhysicalPlan)
+        //logWarning(s"=========== shuffleSize after ${shuffleSize}")
         ///////////////////////////////////////////////////////////////////////////
         if (newCost < origCost ||
             (newCost == origCost && currentPhysicalPlan != newPhysicalPlan)) {
