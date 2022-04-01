@@ -632,9 +632,11 @@ case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule wit
       val tmpPlan = rule(plan)
       logWarning(" AFTER postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
       //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
-      
-      if (!codegendisable || columnarEnabled) //if code gen disabled and we are not doing columnar 
+
+      if (!codegendisable) // || columnarEnabled) //if code gen disabled and we are not doing columnar
         collapseOverrides(tmpPlan)
+      else
+        tmpPlan
     //} else {
     //  logWarning(" AFTER2 postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
     //  session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
