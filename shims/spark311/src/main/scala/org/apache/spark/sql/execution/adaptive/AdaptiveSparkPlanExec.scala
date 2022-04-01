@@ -277,6 +277,8 @@ case class AdaptiveSparkPlanExec(
         finalStageOptimizerRules,
         Some((planChangeLogger, "AQE Final Query Stage Optimization")))
       isFinalPlan = true
+      logWarning(" AFTER getting final plan resetting org.apache.spark.example.columnar.enabled To true")
+      context.session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
       executionId.foreach(onUpdatePlan(_, Seq(currentPhysicalPlan)))
       currentPhysicalPlan
     }
