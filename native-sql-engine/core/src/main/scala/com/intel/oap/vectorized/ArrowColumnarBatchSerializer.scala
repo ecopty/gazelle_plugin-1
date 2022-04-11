@@ -188,7 +188,7 @@ private class ArrowColumnarBatchSerializerInstance(
             readBatchNumRows.set(numRowsTotal.toDouble / numBatchesTotal)
           }
           numOutputRows += numRowsTotal
-                                                          logWarning(s"=========== close ArrowColumnarBatchSerializer updating numOutputRows with ${numRowsTotal} no metrics")
+                                                         //logWarning(s"=========== close ArrowColumnarBatchSerializer updating numOutputRows with ${numRowsTotal} no metrics")
 
           if (cb != null) cb.close()
           if (reader != null) reader.close(true)

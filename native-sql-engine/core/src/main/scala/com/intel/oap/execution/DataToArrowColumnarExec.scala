@@ -84,7 +84,7 @@ case class DataToArrowColumnarExec(child: SparkPlan, numPartitions: Int) extends
       batches.flatMap { batch =>
         numOutputBatches += 1
         numOutputRows += batch.numRows()
-                    logWarning(s"=========== doExecute DataToArrowColumnarExec updating numOutputRows with ${batch.numRows()} - metrics now ${metrics}")
+                   //logWarning(s"=========== doExecute DataToArrowColumnarExec updating numOutputRows with ${batch.numRows()} - metrics now ${metrics}")
 
         batch.rowIterator().asScala.map(toUnsafe)
       }

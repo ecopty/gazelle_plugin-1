@@ -51,7 +51,7 @@ case class ColumnarArrowEvalPythonExec(udfs: Seq[PythonUDF], resultAttrs: Seq[At
     "numOutputBatches" -> SQLMetrics.createMetric(sparkContext, "output_batches"),
     "numInputBatches" -> SQLMetrics.createMetric(sparkContext, "input_batches"),
     "processTime" -> SQLMetrics.createTimingMetric(sparkContext, "totaltime_arrow_udf"))
-  
+
   buildCheck()
 
   private val batchSize = conf.arrowMaxRecordsPerBatch
@@ -77,7 +77,7 @@ case class ColumnarArrowEvalPythonExec(udfs: Seq[PythonUDF], resultAttrs: Seq[At
     }.toArray
     ColumnarProjection.buildCheck(child.output, allInputs.toSeq)
   }
-  
+
   protected def evaluate(
       funcs: Seq[ChainedPythonFunctions],
       argOffsets: Array[Array[Int]],
@@ -215,7 +215,7 @@ case class ColumnarArrowEvalPythonExec(udfs: Seq[PythonUDF], resultAttrs: Seq[At
           val numRows = input_cb.numRows
           numOutputBatches += 1
           numOutputRows += numRows
-                                                                    logWarning(s"=========== doExecuteColumnar ColumnarArrowEvalPythonExec updating numOutputRows with ${numRows} - metrics now ${metrics}")
+                                                                   //logWarning(s"=========== doExecuteColumnar ColumnarArrowEvalPythonExec updating numOutputRows with ${numRows} - metrics now ${metrics}")
 
           procTime += (System.nanoTime() - start_time) / 1000000
           new ColumnarBatch(joinedVectors, numRows)

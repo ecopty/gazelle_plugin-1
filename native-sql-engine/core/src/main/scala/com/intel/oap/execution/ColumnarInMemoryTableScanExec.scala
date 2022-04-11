@@ -70,7 +70,7 @@ case class ColumnarInMemoryTableScanExec(
       .convertCachedBatchToColumnarBatch(buffers, relation.output, attributes, conf)
       .map { cb =>
         numOutputRows += cb.numRows()
-                                            logWarning(s"=========== executeColumnar ColumnarInMemoryTableScanExec updating numOutputRows with ${cb.numRows()} - metrics now ${metrics}")
+                                           //logWarning(s"=========== executeColumnar ColumnarInMemoryTableScanExec updating numOutputRows with ${cb.numRows()} - metrics now ${metrics}")
 
         cb
       }
@@ -88,7 +88,7 @@ case class ColumnarInMemoryTableScanExec(
       filteredCachedBatches().mapPartitions { iter =>
         iter.map { batch =>
           numOutputRows += batch.numRows
-                                                      logWarning(s"=========== executeColumnar ColumnarInMemoryTableScanExec updating numOutputRows with ${batch.numRows} - metrics now ${metrics}")
+                                                     //logWarning(s"=========== executeColumnar ColumnarInMemoryTableScanExec updating numOutputRows with ${batch.numRows} - metrics now ${metrics}")
 
           batch
         }

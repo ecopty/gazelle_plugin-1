@@ -84,7 +84,7 @@ case class ArrowColumnarToRowExec(child: SparkPlan) extends ColumnarToRowTransit
   }
 
   override def doExecute(): RDD[InternalRow] = {
-    logWarning(s"===========  Inside doExecute of ArrowColumnarToRowExec")
+   //logWarning(s"===========  Inside doExecute of ArrowColumnarToRowExec")
     val numOutputRows = longMetric("numOutputRows")
     val numInputBatches = longMetric("numInputBatches")
     val convertTime = longMetric("convertTime")
@@ -102,7 +102,7 @@ case class ArrowColumnarToRowExec(child: SparkPlan) extends ColumnarToRowTransit
       batches.flatMap { batch =>
         numInputBatches += 1
         numOutputRows += batch.numRows()
-        logWarning(s"=========== updating numOutputRows with ${batch.numRows()} - metrics now ${metrics}")
+       //logWarning(s"=========== updating numOutputRows with ${batch.numRows()} - metrics now ${metrics}")
         if (batch.numRows == 0) {
           logInfo(s"Skip ColumnarBatch of ${batch.numRows} rows, ${batch.numCols} cols")
           Iterator.empty

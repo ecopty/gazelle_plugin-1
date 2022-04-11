@@ -122,7 +122,7 @@ case class ColumnarExpandExec(
             idx = -1
           }
           numOutputRows += numRows
-                        logWarning(s"=========== executeColumnar ColumnarExpandExec updating numOutputRows with ${numRows} - metrics now ${metrics}")
+                       //logWarning(s"=========== executeColumnar ColumnarExpandExec updating numOutputRows with ${numRows} - metrics now ${metrics}")
 
           numOutputBatches += 1
           eval_elapse += System.nanoTime() - beforeEval

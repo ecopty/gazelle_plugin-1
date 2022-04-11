@@ -178,7 +178,7 @@ case class AdaptiveSparkPlanExec(
 
   private def getFinalPhysicalPlan(): SparkPlan = lock.synchronized {
     if (isFinalPlan) return currentPhysicalPlan
-    logWarning(s"=========== starting getFinalPhysicalPlan===============")
+   //logWarning(s"=========== starting getFinalPhysicalPlan===============")
 
     // In case of this adaptive plan being executed out of `withActive` scoped functions, e.g.,
     // `plan.queryExecution.rdd`, we need to set active session here as new plan nodes can be
@@ -186,9 +186,9 @@ case class AdaptiveSparkPlanExec(
     context.session.withActive {
       val executionId = getExecutionId
       var currentLogicalPlan = currentPhysicalPlan.logicalLink.get
-      logWarning(s"=========== going to call createQueryStages")
+     //logWarning(s"=========== going to call createQueryStages")
       var result = createQueryStages(currentPhysicalPlan)
-      logWarning(s"=========== AFTER going to call createQueryStages")
+     //logWarning(s"=========== AFTER going to call createQueryStages")
 
       val events = new LinkedBlockingQueue[StageMaterializationEvent]()
       val errors = new mutable.ArrayBuffer[Throwable]()
@@ -230,8 +230,8 @@ case class AdaptiveSparkPlanExec(
           case StageFailure(stage, ex) =>
             errors.append(ex)
         }
-        logWarning(s"=========== AFTER collecting all stages currphysical plan metrics ${currentPhysicalPlan.metrics}")
-        logWarning(s"=========== local metrics ${metrics}")
+       //logWarning(s"=========== AFTER collecting all stages currphysical plan metrics ${currentPhysicalPlan.metrics}")
+       //logWarning(s"=========== local metrics ${metrics}")
 
        // In case of errors, we cancel all running stages and throw exception.
         if (errors.nonEmpty) {
@@ -277,7 +277,7 @@ case class AdaptiveSparkPlanExec(
         finalStageOptimizerRules,
         Some((planChangeLogger, "AQE Final Query Stage Optimization")))
       isFinalPlan = true
-      logWarning(" AFTER getting final plan resetting org.apache.spark.example.columnar.enabled To true")
+      //logWarning(" AFTER getting final plan resetting org.apache.spark.example.columnar.enabled To true")
       //context.session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
       executionId.foreach(onUpdatePlan(_, Seq(currentPhysicalPlan)))
       currentPhysicalPlan
@@ -412,7 +412,7 @@ case class AdaptiveSparkPlanExec(
 
     if (SparkShimLoader.getSparkShims.isCustomShuffleReaderExec(plan))
     {
-        logWarning(s"getShuffleSize for plan ===> isCustomShuffleReaderExec")
+        //logWarning(s"getShuffleSize for plan ===> isCustomShuffleReaderExec")
         val child = SparkShimLoader.getSparkShims.getChildOfCustomShuffleReaderExec(plan)
         var metrics = child.metrics
         if (metrics.contains("dataSize"))

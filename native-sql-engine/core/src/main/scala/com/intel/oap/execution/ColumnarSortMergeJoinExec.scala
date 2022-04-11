@@ -286,7 +286,7 @@ case class ColumnarSortMergeJoinExec(
     val procTime = longMetric("processTime")
     procTime.set(process_time / 1000000)
     numOutputRows += out_num_rows
-    logWarning(s"=========== UpdaeMetrics ColumnarSortMergeJoinExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
+   //logWarning(s"=========== UpdaeMetrics ColumnarSortMergeJoinExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
     numOutputRows
   }
 

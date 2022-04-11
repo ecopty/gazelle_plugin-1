@@ -162,9 +162,9 @@ case class ColumnarConditionProjectExec(
     val numOutputRows = longMetric("numOutputRows")
     val procTime = longMetric("processTime")
     procTime.set(process_time / 1000000)
-    logWarning(s"=========== updateMetrics ColumnarConditionProjectExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
+   //logWarning(s"=========== updateMetrics ColumnarConditionProjectExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
     numOutputRows += out_num_rows
-    logWarning(s"=========== updateMetrics ColumnarConditionProjectExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
+   //logWarning(s"=========== updateMetrics ColumnarConditionProjectExec updating numOutputRows with ${out_num_rows} - metrics now ${metrics}")
     numOutputRows
   }
 
@@ -358,7 +358,7 @@ case class ColumnarLocalLimitExec(limit: Int, child: SparkPlan) extends LimitExe
     }
   }
 
-  
+
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
 
   override def outputPartitioning: Partitioning = child.outputPartitioning
@@ -402,7 +402,7 @@ case class ColumnarLocalLimitExec(limit: Int, child: SparkPlan) extends LimitExe
       new CloseableColumnBatchIterator(res)
     }
   }
-  
+
   protected override def doExecute()
       : org.apache.spark.rdd.RDD[org.apache.spark.sql.catalyst.InternalRow] = {
     throw new UnsupportedOperationException(s"This operator doesn't support doExecute().")
@@ -433,7 +433,7 @@ case class ColumnarGlobalLimitExec(limit: Int, child: SparkPlan) extends LimitEx
     }
   }
 
-  
+
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
 
   override def outputPartitioning: Partitioning = child.outputPartitioning
@@ -478,7 +478,7 @@ case class ColumnarGlobalLimitExec(limit: Int, child: SparkPlan) extends LimitEx
       new CloseableColumnBatchIterator(res)
     }
   }
-  
+
   protected override def doExecute()
       : org.apache.spark.rdd.RDD[org.apache.spark.sql.catalyst.InternalRow] = {
     throw new UnsupportedOperationException(s"This operator doesn't support doExecute().")

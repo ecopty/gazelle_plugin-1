@@ -131,7 +131,7 @@ case class CoalesceBatchesExec(child: SparkPlan) extends UnaryExecNode {
             numOutputRows += rowCount
             numInputBatches += batchesToAppend.length
             numOutputBatches += 1
-            logWarning(s"=========== doExecuteColumnar CoalesceBatchesExec updating numOutputRows with ${rowCount} - metrics now ${metrics}")
+           //logWarning(s"=========== doExecuteColumnar CoalesceBatchesExec updating numOutputRows with ${rowCount} - metrics now ${metrics}")
 
             // used for calculating avgCoalescedNumRows
             numRowsTotal += rowCount

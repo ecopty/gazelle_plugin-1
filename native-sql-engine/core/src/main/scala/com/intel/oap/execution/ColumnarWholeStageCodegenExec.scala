@@ -168,7 +168,7 @@ case class ColumnarWholeStageCodegenExec(child: SparkPlan)(val codegenStageId: I
       while (idx >= 0 && curChild.isInstanceOf[ColumnarCodegenSupport]) {
         if (curChild.isInstanceOf[ColumnarConditionProjectExec]) {
           // see if this condition projector did filter, if so, we need to skip metrics
-          logWarning(s"*** updateMetrics: ${curChild.getClass} metrics ${curChild.metrics}")
+          //logWarning(s"*** updateMetrics: ${curChild.getClass} metrics ${curChild.metrics}")
           val condProj = curChild.asInstanceOf[ColumnarConditionProjectExec]
           if (condProj.condition != null && (condProj.projectList != null && condProj.projectList.size != 0)) {
             idx -= 1
@@ -293,6 +293,7 @@ case class ColumnarWholeStageCodegenExec(child: SparkPlan)(val codegenStageId: I
     val relationHolder: ListBuffer[ColumnarHashedRelation] = ListBuffer()
     var idx = 0
     var curRDD = inputRDDs()(0)
+    //logWarning(s"*** doExecuteColumnar: ENTER ")
     while (idx < buildPlans.length) {
 
       val curPlan = buildPlans(idx)._1
@@ -300,7 +301,7 @@ case class ColumnarWholeStageCodegenExec(child: SparkPlan)(val codegenStageId: I
 
       curRDD = curPlan match {
         case p: ColumnarBroadcastHashJoinExec =>
-                  logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
+                  //logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
 
           val fetchTime = p.longMetric("fetchTime")
           val buildTime = p.longMetric("buildTime")
@@ -348,7 +349,7 @@ case class ColumnarWholeStageCodegenExec(child: SparkPlan)(val codegenStageId: I
             iter
           }
         case p: ColumnarShuffledHashJoinExec =>
-              logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
+              //logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
 
           val buildTime = p.longMetric("buildTime")
           val buildPlan = p.getBuildPlan
@@ -387,11 +388,11 @@ case class ColumnarWholeStageCodegenExec(child: SparkPlan)(val codegenStageId: I
             ExecutorManager.tryTaskSet(numaBindingInfo)
             val curOutput = other match {
               case p: ColumnarSortMergeJoinExec => p.output_skip_alias
-              case p: ColumnarBroadcastHashJoinExec => 
-              logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
+              case p: ColumnarBroadcastHashJoinExec =>
+              //logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
               p.output_skip_alias
-              case p: ColumnarShuffledHashJoinExec => 
-                            logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
+              case p: ColumnarShuffledHashJoinExec =>
+                            //logWarning(s"*** doExecuteColumnar: for ${p.getClass} metrics ${p.metrics}")
 
                 p.output_skip_alias
               case p => p.output

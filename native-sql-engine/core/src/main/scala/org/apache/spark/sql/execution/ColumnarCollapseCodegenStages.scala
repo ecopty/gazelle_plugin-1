@@ -140,13 +140,13 @@ case class ColumnarCollapseCodegenStages(
 
   private def existsJoins(plan: SparkPlan, count: Int = 0): Boolean = plan match {
     case p: ColumnarBroadcastHashJoinExec =>
-                      logWarning(s"*** existsJoins: for ${p.getClass} metrics ${p.metrics}")
+                      //logWarning(s"*** existsJoins: for ${p.getClass} metrics ${p.metrics}")
 
       if (p.condition.isDefined) return true
       if (count >= 1) true
       else plan.children.map(existsJoins(_, count + 1)).exists(_ == true)
     case p: ColumnarShuffledHashJoinExec =>
-                  logWarning(s"*** existsJoins: for ${p.getClass} metrics ${p.metrics}")
+                  //logWarning(s"*** existsJoins: for ${p.getClass} metrics ${p.metrics}")
 
       if (p.condition.isDefined) return true
       if (count >= 1) true
@@ -183,7 +183,7 @@ case class ColumnarCollapseCodegenStages(
       skip_smj: Boolean = false): SparkPlan = plan.child match {
     case p: ColumnarBroadcastHashJoinExec
       if plan.condition == null && !containsExpression(plan.projectList) =>
-      logWarning(s"*** containsExpression: for ${p.getClass} metrics ${p.metrics}")
+      //logWarning(s"*** containsExpression: for ${p.getClass} metrics ${p.metrics}")
 
       ColumnarBroadcastHashJoinExec(
         p.leftKeys,
@@ -197,7 +197,7 @@ case class ColumnarCollapseCodegenStages(
         nullAware = p.isNullAwareAntiJoin)
     case p: ColumnarShuffledHashJoinExec
         if plan.condition == null && !containsExpression(plan.projectList) =>
-        logWarning(s"*** joinOptimization: for ${p.getClass} metrics ${p.metrics}")
+        //logWarning(s"*** joinOptimization: for ${p.getClass} metrics ${p.metrics}")
 
       ColumnarShuffledHashJoinExec(
         p.leftKeys,
@@ -253,7 +253,7 @@ case class ColumnarCollapseCodegenStages(
       case p =>
         p match {
           case exec: ColumnarConditionProjectExec =>
-          logWarning(s"*** insertInputAdapter: ${exec.getClass} metrics ${exec.metrics}")
+          //logWarning(s"*** insertInputAdapter: ${exec.getClass} metrics ${exec.metrics}")
 
             val after_opt = joinOptimization(exec)
             if (after_opt.isInstanceOf[ColumnarConditionProjectExec]) {
@@ -311,12 +311,11 @@ case class ColumnarCollapseCodegenStages(
 
   def apply(plan: SparkPlan): SparkPlan = {
     if (columnarWholeStageEnabled) {
-      logWarning(s"***XXXXXXXXXXXXXXXXXX GETTING HERE: ${exec.getClass} ${codegenStageCounter.Get()}")
+      //logWarning(s"***XXXXXXXXXXXXXXXXXX GETTING HERE: ${exec.getClass} ${codegenStageCounter.get()}")
 
       insertWholeStageCodegen(plan)
     } else {
-      logWarning(s"***XXXXXXXDISABLEDXXXXXXXXXXX GETTING HERE: ${exec.getClass} ${codegenStageCounter.Get()}")
-
+      //logWarning(s"***XXXXXXXDISABLEDXXXXXXXXXXX GETTING HERE: ${exec.getClass} ${codegenStageCounter.get()}")
       plan
     }
   }
