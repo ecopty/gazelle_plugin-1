@@ -636,8 +636,9 @@ case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule wit
       logWarning(" AFTER postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
       //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
 
-      collapseOverrides(tmpPlan)
+      val ret = collapseOverrides(tmpPlan)
       session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "false")
+      ret
 
     } else {
     //  logWarning(" AFTER2 postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
