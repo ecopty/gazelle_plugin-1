@@ -322,7 +322,8 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
             if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
             {
                 logWarning(s"Setting columnar.enabled to false")
-                session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "true")
                 //skip = true
             }
           }
@@ -353,7 +354,8 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
                 if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
                 {
                     logWarning(s"Setting columnar.enabled to false")
-                    session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                    //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                    session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "true")
                     //skip = true
                 }
               }
@@ -382,7 +384,8 @@ case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
                 if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
                 {
                     logWarning(s"Setting columnar.enabled to false")
-                    session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                    //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "false")
+                    session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "true")
                     //skip = true
                 }
               }
@@ -592,7 +595,7 @@ case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule wit
   def preOverrides = ColumnarPreOverrides(session)
   def postOverrides = ColumnarPostOverrides()
 
-  val columnarWholeStageEnabled = conf.getBoolean("spark.oap.sql.columnar.wholestagecodegen", defaultValue = true)
+  def columnarWholeStageEnabled = conf.getBoolean("spark.oap.sql.columnar.wholestagecodegen", defaultValue = true) && !codegendisable
   def collapseOverrides = ColumnarCollapseCodegenStages(columnarWholeStageEnabled)
 
   var isSupportAdaptive: Boolean = true
@@ -626,22 +629,21 @@ case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule wit
 
   override def postColumnarTransitions: Rule[SparkPlan] = plan => {
 
-    //if (columnarEnabled) {
+    if (columnarEnabled) {
       val rule = postOverrides
       rule.setAdaptiveSupport(isSupportAdaptive)
       val tmpPlan = rule(plan)
       logWarning(" AFTER postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
-      session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
+      //session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
 
-      if (!codegendisable) // || columnarEnabled) //if code gen disabled and we are not doing columnar
-        collapseOverrides(tmpPlan)
-      else
-        tmpPlan
-    //} else {
+      collapseOverrides(tmpPlan)
+      session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "false")
+
+    } else {
     //  logWarning(" AFTER2 postColumnar Transitions resetting org.apache.spark.example.columnar.enabled To true")
     //  session.sqlContext.setConf("org.apache.spark.example.columnar.enabled", "true")
-    //  plan
-    //}
+      plan
+    }
   }
 }
 
