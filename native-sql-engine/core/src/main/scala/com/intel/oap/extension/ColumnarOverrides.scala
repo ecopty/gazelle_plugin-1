@@ -57,7 +57,7 @@ import org.apache.spark.util.ShufflePartitionUtils
 
 import scala.collection.mutable
 
-case class ColumnarPreOverrides() extends Rule[SparkPlan] {
+case class ColumnarPreOverrides(session: SparkSession) extends Rule[SparkPlan] {
   val columnarConf: GazellePluginConfig = GazellePluginConfig.getSessionConf
   var isSupportAdaptive: Boolean = true
 
@@ -282,16 +282,53 @@ case class ColumnarPreOverrides() extends Rule[SparkPlan] {
       child match {
         case shuffle: ColumnarShuffleExchangeAdaptor =>
           logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
+          val metrics = shuffle.metrics
+          if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
+          {
+            val dataSize = metrics("dataSize").value
+            logWarning(s"shuffle size ${dataSize} threshold ${columnarConf.shuffleThreshold}")
+
+            if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
+            {
+                logWarning(s"Setting spark.oap.sql.columnar.codegendisableforsmallshuffles to true")
+                session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "true")
+            }
+          }
+
           CoalesceBatchesExec(
             ColumnarCustomShuffleReaderExec(child, partitionSpecs))
         // Use the below code to replace the above to realize compatibility on spark 3.1 & 3.2.
         case shuffleQueryStageExec: ShuffleQueryStageExec =>
           shuffleQueryStageExec.plan match {
             case s: ColumnarShuffleExchangeAdaptor =>
+              val metrics = s.metrics
+              if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
+              {
+                val dataSize = metrics("dataSize").value
+                logWarning(s"shuffle size ${dataSize} threshold ${columnarConf.shuffleThreshold}")
+
+                if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
+                {
+                    logWarning(s"Setting spark.oap.sql.columnar.codegendisableforsmallshuffles to true")
+                    session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "true")
+                }
+              }
               logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(child, partitionSpecs))
             case r @ ReusedExchangeExec(_, s: ColumnarShuffleExchangeAdaptor) =>
+              val metrics = s.metrics
+              if (columnarConf.shuffleThresholdEnabled && metrics.contains("dataSize"))
+              {
+                val dataSize = metrics("dataSize").value
+                logWarning(s"shuffle size ${dataSize} threshold ${columnarConf.shuffleThreshold}")
+
+                if (dataSize > 0 && dataSize < columnarConf.shuffleThreshold)
+                {
+                    logWarning(s"Setting spark.oap.sql.columnar.codegendisableforsmallshuffles to true")
+                    session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "true")
+                }
+              }
               logDebug(s"Columnar Processing for ${plan.getClass} is currently supported.")
               CoalesceBatchesExec(
                 ColumnarCustomShuffleReaderExec(
@@ -465,15 +502,17 @@ case class ColumnarPostOverrides() extends Rule[SparkPlan] {
 case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule with Logging {
   def columnarEnabled =
     session.sqlContext.getConf("org.apache.spark.example.columnar.enabled", "true").trim.toBoolean
+  def codegendisable =
+    session.sqlContext.getConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "false").trim.toBoolean
   def conf = session.sparkContext.getConf
 
   // Do not create rules in class initialization as we should access SQLConf while creating the rules. At this time
   // SQLConf may not be there yet.
   def rowGuardOverrides = ColumnarGuardRule()
-  def preOverrides = ColumnarPreOverrides()
+  def preOverrides = ColumnarPreOverrides(session)
   def postOverrides = ColumnarPostOverrides()
 
-  val columnarWholeStageEnabled = conf.getBoolean("spark.oap.sql.columnar.wholestagecodegen", defaultValue = true)
+  def columnarWholeStageEnabled = conf.getBoolean("spark.oap.sql.columnar.wholestagecodegen", defaultValue = true) && !codegendisable
   def collapseOverrides = ColumnarCollapseCodegenStages(columnarWholeStageEnabled)
 
   var isSupportAdaptive: Boolean = true
@@ -510,7 +549,13 @@ case class ColumnarOverrideRules(session: SparkSession) extends ColumnarRule wit
       val rule = postOverrides
       rule.setAdaptiveSupport(isSupportAdaptive)
       val tmpPlan = rule(plan)
-      collapseOverrides(tmpPlan)
+      val ret = collapseOverrides(tmpPlan)
+      if (codegendisable)
+      {
+        logWarning("postColumnarTransitions: resetting spark.oap.sql.columnar.codegendisableforsmallshuffles To false")
+        session.sqlContext.setConf("spark.oap.sql.columnar.codegendisableforsmallshuffles", "false")
+      }
+      ret
     } else {
       plan
     }
